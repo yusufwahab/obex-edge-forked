@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -21,7 +21,7 @@ export default function SignIn({ navigation }) {
     <LinearGradient colors={['#1a1a1a', '#000000']} style={styles.container}>
       <View style={styles.card}>
         <View style={styles.logo}>
-          <Ionicons name="shield-checkmark" size={60} color="#3a82f6" />
+          <Image source={require('../Component 16 (1).png')} style={styles.logoImage} />
         </View>
 
         <Text style={styles.title}>
@@ -100,6 +100,11 @@ const styles = StyleSheet.create({
   logo: {
     alignItems: 'center',
     marginBottom: 20,
+  },
+  logoImage: {
+    width: 160,
+    height: 160,
+    resizeMode: 'contain',
   },
   title: {
     fontSize: 28,
