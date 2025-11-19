@@ -26,8 +26,8 @@ const CENTER_X = SCREEN_W / 2 - LOGO_SIZE / 2;
 const CENTER_Y = SCREEN_H / 2 - LOGO_SIZE / 2;
 
 // Offsets for start positions (relative to final center)
-const OFFSET_X = LOGO_SIZE * 1.0; // how far away from center
-const OFFSET_Y = LOGO_SIZE * 1.0;
+const OFFSET_X = LOGO_SIZE * 0.5; // reduced offset for better alignment
+const OFFSET_Y = LOGO_SIZE * 0.5;
 
 // ------------------------------------------------------------------
 // 2. COMPONENT
@@ -70,9 +70,9 @@ const LogoLoadingScreen = () => {
     const blueOpacity = interpolate(fadeT, [0, 1], [1, 0]);
 
     return {
+      left: CENTER_X + offsetX,
+      top: CENTER_Y + offsetY,
       transform: [
-        { translateX: CENTER_X + offsetX },
-        { translateY: CENTER_Y + offsetY },
         { rotate: `${blueRot}deg` },
         { scale: blueScale },
       ] as any,
@@ -98,9 +98,9 @@ const LogoLoadingScreen = () => {
     const whiteOpacity = interpolate(fadeT, [0, 1], [1, 0]);
 
     return {
+      left: CENTER_X + offsetX,
+      top: CENTER_Y + offsetY,
       transform: [
-        { translateX: CENTER_X + offsetX },
-        { translateY: CENTER_Y + offsetY },
         { rotate: `${whiteRot}deg` },
         { scale: whiteScale },
       ] as any,
@@ -118,7 +118,8 @@ const LogoLoadingScreen = () => {
     );
     return {
       opacity: fadeInT,
-      transform: [{ translateX: CENTER_X }, { translateY: CENTER_Y }] as any,
+      left: CENTER_X,
+      top: CENTER_Y,
     } as any;
   });
 
@@ -175,12 +176,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
+    position: 'absolute',
     width: LOGO_SIZE,
     height: LOGO_SIZE,
-    // NO position: 'absolute' → let transform do the work
   },
   loadingText: {
-    marginTop: 40,
+    position: 'absolute',
+    bottom: SCREEN_H / 2 - 100,
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
