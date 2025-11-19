@@ -19,8 +19,8 @@ export default function SignUp({ navigation }) {
   };
 
   return (
-    <LinearGradient colors={['#0B1437', '#0B1437', '#000000']} locations={[0, 0.55, 1]} style={styles.container}>
-      <View style={styles.card}>
+    <LinearGradient colors={['#000000', '#404040', '#000000']} locations={[0, 0.5, 1]} style={styles.container}>
+      <View style={styles.content}>
         <View style={styles.logoContainer}>
           <Image source={require('../obex-logo-joined.png')} style={styles.logo} />
         </View>
@@ -116,11 +116,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 24,
   },
-  card: {
-    backgroundColor: '#1A2342',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+  content: {
     paddingHorizontal: 32,
     paddingVertical: 40,
     width: '100%',
@@ -162,7 +158,7 @@ const styles = StyleSheet.create({
   },
   inputWrapper: {
     position: 'relative',
-    backgroundColor: '#141B2D',
+    backgroundColor: '#1A1A1A',
     borderRadius: 0,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',

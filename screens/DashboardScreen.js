@@ -1,441 +1,558 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, Image } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import AddCameraModal from '../components/AddCameraModal';
 
 const DashboardScreen = ({ navigation }) => {
-  const [showWelcomeModal, setShowWelcomeModal] = useState(true);
-  const [showSetupGuide, setShowSetupGuide] = useState(false);
-  const [setupStep, setSetupStep] = useState(0);
+  const [showAddCameraModal, setShowAddCameraModal] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowWelcomeModal(false);
-      setShowSetupGuide(true);
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const setupSteps = [
-    {
-      title: 'Add your First Camera',
-      description: 'Set up surveillance by adding and configuring your camera.',
-      image: require('../Add_Camera.png')
-    },
-    {
-      title: 'Configure Zones',
-      description: 'Define specific monitoring areas and zones for targeted security.',
-      image: require('../Configure_Zones.png')
-    },
-    {
-      title: 'Monitor & Alerts',
-      description: 'Receive real-time notifications for security events.',
-      image: require('../Monitor_Alerts.png')
-    }
-  ];
-
-  const handleSetupNext = () => {
-    if (setupStep < setupSteps.length - 1) {
-      setSetupStep(setupStep + 1);
-    } else {
-      setShowSetupGuide(false);
-    }
-  };
-
-  const handleSetupPrevious = () => {
-    if (setupStep > 0) {
-      setSetupStep(setupStep - 1);
-    }
+  const handleAddCamera = (cameraData) => {
+    console.log('New camera added:', cameraData);
   };
 
   return (
-    <LinearGradient colors={['#0B1437', '#0B1437', '#000000']} locations={[0, 0.55, 1]} style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Dashboard</Text>
-        <TouchableOpacity style={styles.notificationButton}>
-          <Ionicons name="notifications" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-      </View>
+    <View style={[styles.container, { backgroundColor: '#212121' }]}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.dashboardTitle}>Dashboard</Text>
+          <TouchableOpacity style={styles.notificationButton} onPress={() => navigation.navigate('Notifications')}>
+            <Ionicons name="notifications-outline" size={24} color="#FFFFFF" />
+            <View style={styles.notificationDot} />
+          </TouchableOpacity>
+        </View>
 
-      {/* Add Camera Button */}
-      <TouchableOpacity style={styles.addCameraButton}>
-        <Ionicons name="camera" size={16} color="#4A9EFF" style={styles.addCameraIcon} />
-        <Text style={styles.addCameraText}>Add Camera</Text>
-      </TouchableOpacity>
+        <View style={styles.divider}>
+          <LinearGradient
+            colors={['#666666', '#FFFFFF', '#666666']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.gradientLine}
+          />
+        </View>
 
-      {/* Real Time Alerts Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Real Time Alerts</Text>
-        <View style={styles.searchContainer}>
-          <View style={styles.searchInputContainer}>
-            <Ionicons name="search" size={20} color="#8B92A7" style={styles.searchIcon} />
+        {/* Welcome Section */}
+        <View style={styles.welcomeSection}>
+          <Text style={styles.greeting}>
+            Welcome, <Text style={styles.nameAccent}>Name</Text>
+          </Text>
+          <Text style={styles.subtitle}>Your Security Overview</Text>
+        </View>
+
+        {/* System Status Card */}
+        <View style={styles.section}>
+          <View style={styles.statusContainer}>
+            <View style={styles.statusContent}>
+              <View style={styles.statusBox}>
+                <View style={styles.statusHeader}>
+                  <View style={styles.greenDot} />
+                  <Text style={styles.statusTitle}>System Status</Text>
+                </View>
+                <TouchableOpacity 
+                  style={styles.systemHealthBox}
+                  onPress={() => navigation.navigate('DeviceHealth')}
+                >
+                  <LinearGradient
+                    colors={['#404040', '#000000', '#404040']}
+                    style={styles.gradientBox}
+                  >
+                    <Text style={styles.systemHealthText}>System Health</Text>
+                    <Text style={styles.healthPercentage}>50%</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.statusBox}>
+                <Text style={styles.operationalText}>All Systems Operational</Text>
+                <TouchableOpacity 
+                  style={styles.seeDetailsLink}
+                  onPress={() => navigation.navigate('Analytics')}
+                >
+                  <LinearGradient
+                    colors={['#404040', '#000000', '#404040']}
+                    style={styles.gradientBox}
+                  >
+                    <View style={styles.seeDetailsContent}>
+                      <Text style={styles.seeDetailsText}>See Details</Text>
+                      <Ionicons name="chevron-forward" size={16} color="#4A9EFF" />
+                    </View>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Search Bar */}
+        <View style={styles.section}>
+          <View style={styles.searchContainer}>
+            <Ionicons name="search" size={20} color="#666666" style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
               placeholder="Search by location"
-              placeholderTextColor="#8B92A7"
+              placeholderTextColor="#666666"
             />
           </View>
-          <TouchableOpacity style={styles.deleteButton}>
-            <Ionicons name="trash" size={20} color="#8B92A7" />
-          </TouchableOpacity>
         </View>
-      </View>
 
-      {/* Available Cameras Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Available Cameras (1)</Text>
-        <View style={styles.cameraGrid}>
-          <View style={styles.cameraCard}>
-            <Text style={styles.cameraIcon}>📹</Text>
-            <Text style={styles.cameraStatus}>Stream inactive</Text>
-            <TouchableOpacity style={styles.streamButton}>
-              <Text style={styles.streamButtonText}>▶ Stream</Text>
+        {/* My Cameras Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>My Cameras (2)</Text>
+            <TouchableOpacity 
+              style={styles.addButton}
+              onPress={() => setShowAddCameraModal(true)}
+            >
+              <Ionicons name="add" size={16} color="#4A9EFF" style={styles.addIcon} />
+              <Text style={styles.addButtonText}>Add</Text>
             </TouchableOpacity>
           </View>
-          <View style={[styles.cameraCard, styles.emptyCameraCard]} />
+
+          {/* Scrollable Camera Grid */}
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            style={styles.cameraScrollView}
+            contentContainerStyle={styles.cameraScrollContent}
+          >
+            {/* Camera Card 1 */}
+            <View style={styles.cameraCard}>
+              <LinearGradient
+                colors={['#333333', '#2A3A4A']}
+                style={styles.cameraFullContainer}
+              >
+                <View style={styles.cameraHeader}>
+                  <View style={styles.onlineBadge}>
+                    <View style={styles.onlineDot} />
+                    <Text style={styles.onlineText}>Online</Text>
+                  </View>
+                </View>
+                <View style={styles.cameraIconArea}>
+                  <Ionicons name="videocam" size={48} color="#666666" />
+                  <View style={styles.playOverlay}>
+                    <Ionicons name="play" size={16} color="#FFFFFF" />
+                  </View>
+                </View>
+              </LinearGradient>
+              <View style={styles.cameraInfo}>
+                <Text style={styles.cameraName}>Front-door Camera</Text>
+                <View style={styles.locationRow}>
+                  <Ionicons name="location" size={14} color="#CCCCCC" />
+                  <Text style={styles.cameraLocation}>Main Entrance</Text>
+                </View>
+                <View style={styles.statusRow}>
+                  <Ionicons name="time" size={14} color="#CCCCCC" />
+                  <Text style={styles.cameraStatus}>Active 2h • 12 Events Today</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Camera Card 2 */}
+            <View style={styles.cameraCard}>
+              <LinearGradient
+                colors={['#333333', '#2A3A4A']}
+                style={styles.cameraFullContainer}
+              >
+                <View style={styles.cameraHeader}>
+                  <View style={[styles.onlineBadge, styles.offlineBadge]}>
+                    <View style={styles.offlineDot} />
+                    <Text style={styles.offlineText}>Offline</Text>
+                  </View>
+                </View>
+                <View style={styles.cameraIconArea}>
+                  <Ionicons name="videocam" size={48} color="#666666" />
+                  <View style={styles.playOverlay}>
+                    <Ionicons name="play" size={16} color="#FFFFFF" />
+                  </View>
+                </View>
+              </LinearGradient>
+              <View style={styles.cameraInfo}>
+                <Text style={styles.cameraName}>Back-yard Camera</Text>
+                <View style={styles.locationRow}>
+                  <Ionicons name="location" size={14} color="#CCCCCC" />
+                  <Text style={styles.cameraLocation}>Garden Area</Text>
+                </View>
+                <View style={styles.statusRow}>
+                  <Ionicons name="time" size={14} color="#CCCCCC" />
+                  <Text style={styles.cameraStatus}>Inactive • Last seen 1h ago</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Add Camera Card */}
+            <TouchableOpacity 
+              style={[styles.cameraCard, styles.addCameraCard]}
+              onPress={() => setShowAddCameraModal(true)}
+            >
+              <View style={styles.addCameraIcon}>
+                <Ionicons name="add" size={48} color="#4A9EFF" />
+              </View>
+              <Text style={styles.addCameraText}>Add New Camera</Text>
+            </TouchableOpacity>
+          </ScrollView>
         </View>
-      </View>
+
+        <View style={styles.bottomPadding} />
+      </ScrollView>
 
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
         <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
           <Ionicons name="apps" size={20} color="#000000" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="location" size={20} color="#8B92A7" />
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigation.navigate('Analytics')}
+        >
+          <Ionicons name="bar-chart" size={20} color="#8B92A7" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => setShowAddCameraModal(true)}
+        >
           <Ionicons name="add" size={24} color="#8B92A7" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigation.navigate('DeviceHealth')}
+        >
           <Ionicons name="time" size={20} color="#8B92A7" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Settings')}>
           <Ionicons name="settings" size={20} color="#8B92A7" />
         </TouchableOpacity>
       </View>
 
-      {/* Welcome Modal */}
-      <Modal visible={showWelcomeModal} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.welcomeModal}>
-            <Text style={styles.welcomeText}>
-              Welcome to <Text style={styles.obexText}>OBEX</Text>, User.
-            </Text>
-            <Text style={styles.welcomeSubtext}>
-              Let's get you started with a quick setup guide.
-            </Text>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Setup Guide Modal */}
-      <Modal visible={showSetupGuide} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.setupModal}>
-            <View style={styles.setupProgressContainer}>
-              {setupSteps.map((_, index) => (
-                <React.Fragment key={index}>
-                  <View
-                    style={[
-                      styles.setupProgressDot,
-                      index === setupStep ? styles.setupProgressDotActive : 
-                      index < setupStep ? styles.setupProgressDotCompleted : styles.setupProgressDotInactive
-                    ]}
-                  />
-                  {index < setupSteps.length - 1 && (
-                    <View style={[
-                      styles.progressLine,
-                      index < setupStep ? styles.progressLineCompleted : styles.progressLineInactive
-                    ]} />
-                  )}
-                </React.Fragment>
-              ))}
-            </View>
-            
-            <Text style={styles.setupTitle}>{setupSteps[setupStep].title}</Text>
-            <Image source={setupSteps[setupStep].image} style={styles.setupImage} />
-            <Text style={styles.setupDescription}>{setupSteps[setupStep].description}</Text>
-            <Text style={styles.setupCounter}>{setupStep + 1} of {setupSteps.length}</Text>
-            
-            <View style={styles.setupButtonContainer}>
-              <TouchableOpacity 
-                style={[styles.setupButton, styles.setupPreviousButton]}
-                onPress={handleSetupPrevious}
-                disabled={setupStep === 0}
-              >
-                <Text style={styles.setupPreviousButtonText}>Previous</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.setupButton, styles.setupNextButton]}
-                onPress={handleSetupNext}
-              >
-                <Text style={styles.setupNextButtonText}>
-                  {setupStep === setupSteps.length - 1 ? 'Start' : 'Next'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-    </LinearGradient>
+      <AddCameraModal 
+        visible={showAddCameraModal}
+        onClose={() => setShowAddCameraModal(false)}
+        onComplete={handleAddCamera}
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B1437',
-    paddingTop: 60,
+  },
+  scrollView: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    marginBottom: 20,
+    paddingHorizontal: 16,
+    paddingTop: 60,
   },
-  headerTitle: {
+  backButton: {
+    padding: 8,
+  },
+  dashboardTitle: {
     fontSize: 28,
     color: '#FFFFFF',
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   notificationButton: {
     padding: 8,
+    position: 'relative',
   },
-
-  addCameraButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-end',
-    marginRight: 24,
-    marginBottom: 20,
+  notificationDot: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FF0000',
+  },
+  welcomeSection: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: '#4A9EFF',
-    borderRadius: 0,
+    paddingTop: 20,
+    marginBottom: 30,
   },
-  addCameraIcon: {
-    marginRight: 8,
+  greeting: {
+    fontSize: 24,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
   },
-  addCameraText: {
+  nameAccent: {
     color: '#4A9EFF',
-    fontSize: 14,
-    fontWeight: '500',
   },
-  section: {
-    paddingHorizontal: 24,
+  subtitle: {
+    fontSize: 16,
+    color: '#8B92A7',
+    marginTop: 4,
+  },
+  divider: {
+    marginHorizontal: 16,
+    marginTop: 20,
     marginBottom: 24,
   },
-  sectionTitle: {
-    fontSize: 18,
+  gradientLine: {
+    height: 2,
+  },
+  section: {
+    paddingHorizontal: 16,
+    marginBottom: 24,
+  },
+  statusContainer: {
+    backgroundColor: 'rgba(64,64,64,0.7)',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 0.5,
+    borderColor: '#555555',
+  },
+  statusContent: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  statusBox: {
+    flex: 1,
+  },
+  statusHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  greenDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#00FF00',
+    marginRight: 8,
+  },
+  statusTitle: {
     color: '#FFFFFF',
-    fontWeight: '600',
-    marginBottom: 12,
+    fontSize: 14,
+  },
+  operationalText: {
+    color: '#00FF00',
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  systemHealthBox: {
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 0.5,
+    borderColor: '#555555',
+  },
+  seeDetailsLink: {
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 0.5,
+    borderColor: '#555555',
+  },
+  gradientBox: {
+    padding: 16,
+    alignItems: 'flex-start',
+    minHeight: 80,
+    justifyContent: 'center',
+  },
+  systemHealthText: {
+    color: '#8B92A7',
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  healthPercentage: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  seeDetailsContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  seeDetailsText: {
+    color: '#4A9EFF',
+    fontSize: 14,
+    marginRight: 8,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  searchInputContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#141B2D',
-    borderRadius: 0,
-    borderWidth: 1,
-    borderColor: '#FFFFFF',
-    marginRight: 12,
+    backgroundColor: 'rgba(64,64,64,0.7)',
+    borderRadius: 22,
+    paddingHorizontal: 12,
     height: 44,
   },
   searchIcon: {
-    marginLeft: 12,
     marginRight: 8,
   },
   searchInput: {
     flex: 1,
     color: '#FFFFFF',
-    paddingVertical: 12,
-    paddingRight: 12,
+    fontSize: 16,
   },
-  deleteButton: {
-    padding: 8,
-  },
-
-  cameraGrid: {
+  sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-  },
-  cameraCard: {
-    width: '48%',
-    backgroundColor: '#1A2342',
-    borderRadius: 12,
-    padding: 16,
     alignItems: 'center',
-    minHeight: 120,
+    marginBottom: 16,
   },
-  emptyCameraCard: {
-    backgroundColor: '#0F1A2E',
+  sectionTitle: {
+    fontSize: 18,
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
-  cameraIcon: {
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  cameraStatus: {
-    color: '#8B92A7',
-    fontSize: 14,
-    marginBottom: 12,
-  },
-  streamButton: {
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#000000',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: '#FFFFFF',
-    borderRadius: 0,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
   },
-  streamButtonText: {
+  addIcon: {
+    marginRight: 4,
+  },
+  addButtonText: {
     color: '#FFFFFF',
     fontSize: 14,
+    fontWeight: '500',
+  },
+  cameraScrollView: {
+    marginBottom: 16,
+  },
+  cameraScrollContent: {
+    paddingRight: 16,
+  },
+  cameraCard: {
+    borderRadius: 12,
+    width: 280,
+    marginRight: 16,
+    overflow: 'hidden',
+    borderWidth: 0.2,
+    borderColor: '#555555',
+  },
+  cameraFullContainer: {
+    height: 132,
+  },
+  cameraHeader: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    padding: 12,
+  },
+  cameraIconArea: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    position: 'relative',
+  },
+  playOverlay: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    backgroundColor: '#666666',
+    borderRadius: 20,
+    padding: 8,
+  },
+  cameraInfo: {
+    backgroundColor: '#333333',
+    padding: 16,
+  },
+  onlineBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,255,0,0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  offlineBadge: {
+    backgroundColor: 'rgba(255,0,0,0.2)',
+  },
+  onlineDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#00FF00',
+    marginRight: 4,
+  },
+  offlineDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FF0000',
+    marginRight: 4,
+  },
+  onlineText: {
+    color: '#00FF00',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  offlineText: {
+    color: '#FF0000',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  cameraName: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'left',
+    marginBottom: 4,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cameraLocation: {
+    color: '#CCCCCC',
+    fontSize: 14,
+    marginLeft: 4,
+  },
+  cameraStatus: {
+    color: '#CCCCCC',
+    fontSize: 12,
+    marginLeft: 4,
+  },
+  addCameraCard: {
+    backgroundColor: 'rgba(74,158,255,0.1)',
+    borderColor: '#4A9EFF',
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 200,
+  },
+  addCameraIcon: {
+    marginBottom: 12,
+  },
+  addCameraText: {
+    color: '#4A9EFF',
+    fontSize: 16,
+    fontWeight: '500',
   },
   bottomNav: {
     position: 'absolute',
-    bottom: 30,
-    left: 24,
-    right: 24,
+    bottom: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
-    backgroundColor: '#1A2342',
-    borderRadius: 25,
+    backgroundColor: '#1A1A1A',
     paddingVertical: 12,
     justifyContent: 'space-around',
+    borderWidth: 1,
+    borderColor: '#555555',
   },
   navItem: {
     padding: 8,
+    borderRadius: 20,
   },
   navItemActive: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
   },
 
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  welcomeModal: {
-    backgroundColor: '#1A2342',
-    borderRadius: 16,
-    padding: 24,
-    margin: 24,
-    alignItems: 'center',
-  },
-  welcomeText: {
-    fontSize: 20,
-    color: '#FFFFFF',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  obexText: {
-    color: '#4A9EFF',
-  },
-  welcomeSubtext: {
-    fontSize: 16,
-    color: '#8B92A7',
-    textAlign: 'center',
-  },
-  setupModal: {
-    backgroundColor: '#1A2342',
-    borderRadius: 16,
-    padding: 24,
-    margin: 24,
-    alignItems: 'center',
-  },
-  setupProgressContainer: {
-    flexDirection: 'row',
-    marginBottom: 24,
-  },
-  setupProgressDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 0,
-  },
-  setupProgressDotActive: {
-    backgroundColor: '#FFFFFF',
-  },
-  setupProgressDotInactive: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#8B92A7',
-  },
-  setupProgressDotCompleted: {
-    backgroundColor: '#8B92A7',
-  },
-  progressLine: {
-    width: 30,
-    height: 2,
-    marginHorizontal: 4,
-  },
-  progressLineCompleted: {
-    backgroundColor: '#8B92A7',
-  },
-  progressLineInactive: {
-    backgroundColor: '#8B92A7',
-    opacity: 0.3,
-  },
-  setupTitle: {
-    fontSize: 24,
-    color: '#FFFFFF',
-    fontWeight: '600',
-    marginBottom: 20,
-  },
-  setupImage: {
-    width: 120,
-    height: 120,
-    resizeMode: 'contain',
-    marginBottom: 20,
-  },
-  setupDescription: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    textAlign: 'center',
-    marginBottom: 16,
-    lineHeight: 22,
-  },
-  setupCounter: {
-    fontSize: 14,
-    color: '#8B92A7',
-    marginBottom: 24,
-  },
-  setupButtonContainer: {
-    flexDirection: 'row',
-    width: '100%',
-  },
-  setupButton: {
-    flex: 1,
-    height: 48,
-    borderRadius: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginHorizontal: 6,
-  },
-  setupPreviousButton: {
-    borderWidth: 1,
-    borderColor: '#4A9EFF',
-  },
-  setupPreviousButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-  },
-  setupNextButton: {
-    backgroundColor: '#FFFFFF',
-  },
-  setupNextButtonText: {
-    color: '#0A1128',
-    fontSize: 16,
-    fontWeight: '600',
+  bottomPadding: {
+    height: 100,
   },
 });
 

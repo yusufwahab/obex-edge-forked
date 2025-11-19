@@ -61,7 +61,7 @@ const OnboardingScreen = ({ navigation }) => {
   };
 
   return (
-    <LinearGradient colors={['#0B1437', '#0B1437', '#000000']} locations={[0, 0.55, 1]} style={styles.container}>
+    <LinearGradient colors={['#000000', '#404040', '#000000']} locations={[0, 0.5, 1]} style={styles.container}>
       {currentStep > 0 && (
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Text style={styles.backButtonText}>← Back</Text>
