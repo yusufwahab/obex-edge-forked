@@ -1,83 +1,38 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const AddCameraModal = ({ visible, onClose, onComplete }) => {
-  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
-    cameraName: '',
-    location: '',
-    ipAddress: '',
-    password: ''
+    name: '',
+    rtspUrl: ''
   });
 
-  const steps = [
-    {
-      title: 'Camera Name',
-      subtitle: 'Give your camera a recognizable name',
-      field: 'cameraName',
-      placeholder: 'e.g., Front Door Camera',
-      icon: 'videocam',
-      description: 'Choose a name that helps you identify this camera easily'
-    },
-    {
-      title: 'Location',
-      subtitle: 'Where is this camera located?',
-      field: 'location',
-      placeholder: 'e.g., Living Room, Garden',
-      icon: 'location',
-      description: 'This helps organize your cameras by area'
-    },
-    {
-      title: 'IP Address',
-      subtitle: 'Enter the camera\'s network address',
-      field: 'ipAddress',
-      placeholder: 'e.g., 192.168.1.100',
-      icon: 'globe',
-      description: 'Find this in your camera settings or router admin panel'
-    },
-    {
-      title: 'Password',
-      subtitle: 'Enter the camera access password',
-      field: 'password',
-      placeholder: 'Camera password',
-      icon: 'lock-closed',
-      description: 'This is usually found on the camera label or manual',
-      secure: true
+  const handleComplete = () => {
+    if (!formData.name.trim()) {
+      Alert.alert('Error', 'Please enter a camera name');
+      return;
     }
-  ];
-
-  const currentStepData = steps[currentStep - 1];
-
-  const handleNext = () => {
-    if (currentStep < steps.length) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      onComplete(formData);
-      handleClose();
+    if (!formData.rtspUrl.trim()) {
+      Alert.alert('Error', 'Please enter an RTSP URL');
+      return;
     }
-  };
-
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+    if (!formData.rtspUrl.startsWith('rtsp://')) {
+      Alert.alert('Error', 'RTSP URL must start with rtsp://');
+      return;
     }
+    
+    onComplete(formData);
+    handleClose();
   };
 
   const handleClose = () => {
-    setCurrentStep(1);
     setFormData({
-      cameraName: '',
-      location: '',
-      ipAddress: '',
-      password: ''
+      name: '',
+      rtspUrl: ''
     });
     onClose();
-  };
-
-  const isCurrentStepValid = () => {
-    return formData[currentStepData.field]?.trim().length > 0;
   };
 
   return (
@@ -105,65 +60,67 @@ const AddCameraModal = ({ visible, onClose, onComplete }) => {
             <View style={styles.placeholder} />
           </View>
 
-          {/* Progress Indicator */}
-          <View style={styles.progressContainer}>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${(currentStep / steps.length) * 100}%` }]} />
-            </View>
-            <Text style={styles.progressText}>Step {currentStep} of {steps.length}</Text>
-          </View>
-
           {/* Content */}
           <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
             <View style={styles.content}>
               <View style={styles.iconContainer}>
                 <View style={styles.iconBackground}>
-                  <Ionicons name={currentStepData.icon} size={32} color="#4A9EFF" />
+                  <Ionicons name="videocam" size={32} color="#4A9EFF" />
                 </View>
               </View>
 
-              <Text style={styles.stepTitle}>{currentStepData.title}</Text>
-              <Text style={styles.stepSubtitle}>{currentStepData.subtitle}</Text>
+              <Text style={styles.stepTitle}>Add New Camera</Text>
+              <Text style={styles.stepSubtitle}>Enter camera details to start streaming</Text>
 
               <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Camera Name</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder={currentStepData.placeholder}
+                  placeholder="e.g., Front Door Camera"
                   placeholderTextColor="#8B92A7"
-                  value={formData[currentStepData.field]}
+                  value={formData.name}
                   onChangeText={(text) => setFormData(prev => ({
                     ...prev,
-                    [currentStepData.field]: text
+                    name: text
                   }))}
-                  secureTextEntry={currentStepData.secure}
                   autoFocus={true}
                 />
               </View>
 
-              <Text style={styles.description}>{currentStepData.description}</Text>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>RTSP URL</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="rtsp://admin:password@192.168.1.10:554/stream1"
+                  placeholderTextColor="#8B92A7"
+                  value={formData.rtspUrl}
+                  onChangeText={(text) => setFormData(prev => ({
+                    ...prev,
+                    rtspUrl: text
+                  }))}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+
+              <Text style={styles.description}>Enter the complete RTSP URL including credentials and stream path</Text>
             </View>
           </ScrollView>
 
           {/* Navigation Buttons */}
           <View style={styles.buttonContainer}>
-            {currentStep > 1 && (
-              <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-                <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
-                <Text style={styles.backButtonText}>Back</Text>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity style={styles.cancelButton} onPress={handleClose}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
             
             <TouchableOpacity 
-              style={[styles.nextButton, !isCurrentStepValid() && styles.nextButtonDisabled]}
-              onPress={handleNext}
-              disabled={!isCurrentStepValid()}
+              style={[styles.addButton, (!formData.name.trim() || !formData.rtspUrl.trim()) && styles.addButtonDisabled]}
+              onPress={handleComplete}
+              disabled={!formData.name.trim() || !formData.rtspUrl.trim()}
             >
-              <Text style={[styles.nextButtonText, !isCurrentStepValid() && styles.nextButtonTextDisabled]}>
-                {currentStep === steps.length ? 'Add Camera' : 'Next'}
+              <Text style={[styles.addButtonText, (!formData.name.trim() || !formData.rtspUrl.trim()) && styles.addButtonTextDisabled]}>
+                Add Camera
               </Text>
-              {currentStep < steps.length && (
-                <Ionicons name="chevron-forward" size={20} color={isCurrentStepValid() ? "#000000" : "#666666"} />
-              )}
             </TouchableOpacity>
           </View>
         </LinearGradient>
@@ -198,26 +155,6 @@ const styles = StyleSheet.create({
   placeholder: {
     width: 40,
   },
-  progressContainer: {
-    paddingHorizontal: 16,
-    marginBottom: 40,
-  },
-  progressBar: {
-    height: 4,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 2,
-    marginBottom: 8,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#4A9EFF',
-    borderRadius: 2,
-  },
-  progressText: {
-    color: '#8B92A7',
-    fontSize: 14,
-    textAlign: 'center',
-  },
   scrollContent: {
     flex: 1,
   },
@@ -251,7 +188,13 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     width: '100%',
-    marginBottom: 16,
+    marginBottom: 24,
+  },
+  inputLabel: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
   },
   input: {
     backgroundColor: 'rgba(64,64,64,0.7)',
@@ -261,7 +204,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FFFFFF',
     borderWidth: 0.5,
-    borderColor: '#999999',
+    borderColor: '#555555',
   },
   description: {
     fontSize: 14,
@@ -276,41 +219,35 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     gap: 12,
   },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  cancelButton: {
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#FFFFFF',
-    backgroundColor: 'transparent',
+    borderColor: '#666666',
   },
-  backButtonText: {
-    color: '#FFFFFF',
+  cancelButtonText: {
+    color: '#666666',
     fontSize: 16,
     fontWeight: '500',
-    marginLeft: 4,
   },
-  nextButton: {
+  addButton: {
     flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 16,
     borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    gap: 4,
+    backgroundColor: '#4A9EFF',
   },
-  nextButtonDisabled: {
-    backgroundColor: 'rgba(255,255,255,0.3)',
+  addButtonDisabled: {
+    backgroundColor: 'rgba(74,158,255,0.3)',
   },
-  nextButtonText: {
-    color: '#000000',
+  addButtonText: {
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
-  nextButtonTextDisabled: {
+  addButtonTextDisabled: {
     color: '#666666',
   },
 });

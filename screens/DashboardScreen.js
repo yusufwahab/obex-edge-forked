@@ -3,12 +3,36 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AddCameraModal from '../components/AddCameraModal';
+import RTSPPlayer from '../components/RTSPPlayer';
 
 const DashboardScreen = ({ navigation }) => {
   const [showAddCameraModal, setShowAddCameraModal] = useState(false);
+  const [cameras, setCameras] = useState([
+    {
+      id: 1,
+      name: 'Front-door Camera',
+      location: 'Main Entrance',
+      rtspUrl: null,
+      isOnline: false
+    },
+    {
+      id: 2,
+      name: 'Back-yard Camera',
+      location: 'Garden Area',
+      rtspUrl: null,
+      isOnline: false
+    }
+  ]);
 
   const handleAddCamera = (cameraData) => {
-    console.log('New camera added:', cameraData);
+    const newCamera = {
+      id: Date.now(),
+      name: cameraData.name,
+      location: 'New Location',
+      rtspUrl: cameraData.rtspUrl,
+      isOnline: true
+    };
+    setCameras(prev => [...prev, newCamera]);
   };
 
   return (
@@ -95,10 +119,22 @@ const DashboardScreen = ({ navigation }) => {
           </View>
         </View>
 
+        {/* Live Stream Button */}
+        <View style={styles.section}>
+          <TouchableOpacity 
+            style={styles.liveStreamButton}
+            onPress={() => navigation.navigate('LiveStream')}
+          >
+            <Ionicons name="videocam" size={24} color="#FFFFFF" />
+            <Text style={styles.liveStreamText}>Live RTSP Stream</Text>
+            <Ionicons name="chevron-forward" size={20} color="#4A9EFF" />
+          </TouchableOpacity>
+        </View>
+
         {/* My Cameras Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>My Cameras (2)</Text>
+            <Text style={styles.sectionTitle}>My Cameras ({cameras.length})</Text>
             <TouchableOpacity 
               style={styles.addButton}
               onPress={() => setShowAddCameraModal(true)}
@@ -115,69 +151,59 @@ const DashboardScreen = ({ navigation }) => {
             style={styles.cameraScrollView}
             contentContainerStyle={styles.cameraScrollContent}
           >
-            {/* Camera Card 1 */}
-            <View style={styles.cameraCard}>
-              <LinearGradient
-                colors={['#333333', '#2A3A4A']}
-                style={styles.cameraFullContainer}
-              >
-                <View style={styles.cameraHeader}>
-                  <View style={styles.onlineBadge}>
-                    <View style={styles.onlineDot} />
-                    <Text style={styles.onlineText}>Online</Text>
+            {cameras.map((camera) => (
+              <View key={camera.id} style={styles.cameraCard}>
+                <LinearGradient
+                  colors={['#333333', '#2A3A4A']}
+                  style={styles.cameraFullContainer}
+                >
+                  <View style={styles.cameraHeader}>
+                    <View style={[styles.onlineBadge, !camera.isOnline && styles.offlineBadge]}>
+                      <View style={camera.isOnline ? styles.onlineDot : styles.offlineDot} />
+                      <Text style={camera.isOnline ? styles.onlineText : styles.offlineText}>
+                        {camera.isOnline ? 'Online' : 'Offline'}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-                <View style={styles.cameraIconArea}>
-                  <Ionicons name="videocam" size={48} color="#666666" />
-                  <View style={styles.playOverlay}>
-                    <Ionicons name="play" size={16} color="#FFFFFF" />
+                  <View style={styles.cameraIconArea}>
+                    {camera.rtspUrl ? (
+                      <>
+                        <RTSPPlayer
+                          rtspUrl={camera.rtspUrl}
+                          style={styles.videoStream}
+                          autoplay={true}
+                          showControls={false}
+                        />
+                        <View style={styles.liveIndicator}>
+                          <View style={styles.liveDot} />
+                          <Text style={styles.liveText}>LIVE</Text>
+                        </View>
+                      </>
+                    ) : (
+                      <>
+                        <Ionicons name="videocam" size={48} color="#666666" />
+                        <View style={styles.playOverlay}>
+                          <Ionicons name="play" size={16} color="#FFFFFF" />
+                        </View>
+                      </>
+                    )}
                   </View>
-                </View>
-              </LinearGradient>
-              <View style={styles.cameraInfo}>
-                <Text style={styles.cameraName}>Front-door Camera</Text>
-                <View style={styles.locationRow}>
-                  <Ionicons name="location" size={14} color="#CCCCCC" />
-                  <Text style={styles.cameraLocation}>Main Entrance</Text>
-                </View>
-                <View style={styles.statusRow}>
-                  <Ionicons name="time" size={14} color="#CCCCCC" />
-                  <Text style={styles.cameraStatus}>Active 2h • 12 Events Today</Text>
+                </LinearGradient>
+                <View style={styles.cameraInfo}>
+                  <Text style={styles.cameraName}>{camera.name}</Text>
+                  <View style={styles.locationRow}>
+                    <Ionicons name="location" size={14} color="#CCCCCC" />
+                    <Text style={styles.cameraLocation}>{camera.location}</Text>
+                  </View>
+                  <View style={styles.statusRow}>
+                    <Ionicons name="time" size={14} color="#CCCCCC" />
+                    <Text style={styles.cameraStatus}>
+                      {camera.isOnline ? 'Active 2h • 12 Events Today' : 'Inactive • Last seen 1h ago'}
+                    </Text>
+                  </View>
                 </View>
               </View>
-            </View>
-
-            {/* Camera Card 2 */}
-            <View style={styles.cameraCard}>
-              <LinearGradient
-                colors={['#333333', '#2A3A4A']}
-                style={styles.cameraFullContainer}
-              >
-                <View style={styles.cameraHeader}>
-                  <View style={[styles.onlineBadge, styles.offlineBadge]}>
-                    <View style={styles.offlineDot} />
-                    <Text style={styles.offlineText}>Offline</Text>
-                  </View>
-                </View>
-                <View style={styles.cameraIconArea}>
-                  <Ionicons name="videocam" size={48} color="#666666" />
-                  <View style={styles.playOverlay}>
-                    <Ionicons name="play" size={16} color="#FFFFFF" />
-                  </View>
-                </View>
-              </LinearGradient>
-              <View style={styles.cameraInfo}>
-                <Text style={styles.cameraName}>Back-yard Camera</Text>
-                <View style={styles.locationRow}>
-                  <Ionicons name="location" size={14} color="#CCCCCC" />
-                  <Text style={styles.cameraLocation}>Garden Area</Text>
-                </View>
-                <View style={styles.statusRow}>
-                  <Ionicons name="time" size={14} color="#CCCCCC" />
-                  <Text style={styles.cameraStatus}>Inactive • Last seen 1h ago</Text>
-                </View>
-              </View>
-            </View>
+            ))}
 
             {/* Add Camera Card */}
             <TouchableOpacity 
@@ -191,6 +217,8 @@ const DashboardScreen = ({ navigation }) => {
             </TouchableOpacity>
           </ScrollView>
         </View>
+
+
 
         <View style={styles.bottomPadding} />
       </ScrollView>
@@ -553,6 +581,55 @@ const styles = StyleSheet.create({
 
   bottomPadding: {
     height: 100,
+  },
+  videoStream: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  liveIndicator: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,0,0,0.8)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    zIndex: 10,
+  },
+  liveDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#FFFFFF',
+    marginRight: 4,
+  },
+  liveText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+
+  liveStreamButton: {
+    backgroundColor: 'rgba(64,64,64,0.7)',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 0.5,
+    borderColor: '#555555',
+  },
+  liveStreamText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    flex: 1,
+    marginLeft: 12,
   },
 });
 

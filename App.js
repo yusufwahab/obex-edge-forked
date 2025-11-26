@@ -11,6 +11,7 @@ import AnalyticsScreen from './screens/AnalyticsScreen';
 import DeviceHealthScreen from './screens/DeviceHealthScreen';
 import NotificationsScreen from './screens/NotificationsScreen';
 import SettingsScreen from './screens/SettingsScreen';
+import LiveStreamScreen from './screens/LiveStreamScreen';
 
 const Stack = createStackNavigator();
 
@@ -37,6 +38,7 @@ export default function App() {
         <Stack.Screen name="DeviceHealth" component={DeviceHealthScreen} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="LiveStream" component={LiveStreamScreen} />
       </Stack.Navigator>
       <StatusBar style="light" />
     </NavigationContainer>

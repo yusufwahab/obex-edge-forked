@@ -13,15 +13,42 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.avzdax.obexedge",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSAllowsLocalNetworking": true
+        },
+        "NSCameraUsageDescription": "This app needs access to camera for video streaming",
+        "NSMicrophoneUsageDescription": "This app needs access to microphone for audio streaming",
+        "NSLocalNetworkUsageDescription": "This app needs access to local network for RTSP streaming"
+      }
     },
     "android": {
       "backgroundColor": "#ffffff",
-      "package": "com.anonymous.obexedge"
+      "package": "com.anonymous.obexedge",
+      "minSdkVersion": 26,
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.ACCESS_WIFI_STATE",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.WAKE_LOCK"
+      ],
+      "usesCleartextTraffic": true
     },
     "web": {},
     "plugins": [
-      "expo-asset"
-    ]
+      "expo-asset",
+      "expo-av"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "7d187f53-b67e-4801-a7a4-a31db3df264b"
+      }
+    }
   }
 }
