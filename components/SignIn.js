@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -17,8 +17,9 @@ export default function SignIn({ navigation }) {
   };
 
   return (
-    <LinearGradient colors={['#000000', '#404040', '#000000']} locations={[0, 0.5, 1]} style={styles.container}>
-      <View style={styles.content}>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <LinearGradient colors={['#000000', '#404040', '#000000']} locations={[0, 0.5, 1]} style={styles.container}>
+        <View style={styles.content}>
         <View style={styles.logoContainer}>
           <Image source={require('../obex-logo-joined.png')} style={styles.logo} />
         </View>
@@ -66,13 +67,20 @@ export default function SignIn({ navigation }) {
           <Text style={styles.submitButtonText}>Sign In</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+        <TouchableOpacity 
+          onPress={() => {
+            console.log('Signup button pressed');
+            navigation.navigate('SignUp');
+          }}
+          style={styles.signupLinkButton}
+        >
           <Text style={styles.bottomLinkText}>
             Don't have an account? <Text style={styles.bottomLinkHighlight}>Sign up here</Text>
           </Text>
         </TouchableOpacity>
-      </View>
-    </LinearGradient>
+        </View>
+      </LinearGradient>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -174,5 +182,10 @@ const styles = StyleSheet.create({
   bottomLinkHighlight: {
     color: '#4A9EFF',
     fontWeight: '500',
+  },
+  signupLinkButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    alignItems: 'center',
   },
 });

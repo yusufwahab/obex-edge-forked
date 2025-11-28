@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import CameraSetupModal from './CameraSetupModal';
 
 export default function SignUp({ navigation }) {
   const [fullName, setFullName] = useState('');
@@ -9,18 +10,25 @@ export default function SignUp({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showCameraSetup, setShowCameraSetup] = useState(false);
 
   const handleSignUp = () => {
     if (!fullName || !phoneNumber || !email || !password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
+    setShowCameraSetup(true);
+  };
+
+  const handleCameraSetupClose = () => {
+    setShowCameraSetup(false);
     navigation.navigate('Dashboard');
   };
 
   return (
-    <LinearGradient colors={['#000000', '#404040', '#000000']} locations={[0, 0.5, 1]} style={styles.container}>
-      <View style={styles.content}>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <LinearGradient colors={['#000000', '#404040', '#000000']} locations={[0, 0.5, 1]} style={styles.container}>
+        <View style={styles.content}>
         <View style={styles.logoContainer}>
           <Image source={require('../obex-logo-joined.png')} style={styles.logo} />
         </View>
@@ -98,13 +106,25 @@ export default function SignUp({ navigation }) {
           <Text style={styles.submitButtonText}>Create Account</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate('SignIn')}>
+        <TouchableOpacity 
+          onPress={() => {
+            console.log('Login button pressed');
+            navigation.navigate('SignIn');
+          }}
+          style={styles.loginLinkButton}
+        >
           <Text style={styles.bottomLinkText}>
             Already have an account? <Text style={styles.bottomLinkHighlight}>Login here</Text>
           </Text>
         </TouchableOpacity>
-      </View>
-    </LinearGradient>
+        </View>
+        
+        <CameraSetupModal 
+          visible={showCameraSetup}
+          onClose={handleCameraSetupClose}
+        />
+      </LinearGradient>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -206,6 +226,11 @@ const styles = StyleSheet.create({
   bottomLinkHighlight: {
     color: '#4A9EFF',
     fontWeight: '500',
+  },
+  loginLinkButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    alignItems: 'center',
   },
 
 });

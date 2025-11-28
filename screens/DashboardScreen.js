@@ -1,19 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AddCameraModal from '../components/AddCameraModal';
 import RTSPPlayer from '../components/RTSPPlayer';
+import VideoPlayer from '../components/VideoPlayer';
+import SecurityAlertModal from '../components/SecurityAlertModal';
+import ThreatCard from '../components/ThreatCard';
 
 const DashboardScreen = ({ navigation }) => {
   const [showAddCameraModal, setShowAddCameraModal] = useState(false);
+  const [showSecurityAlert, setShowSecurityAlert] = useState(false);
+  const [showThreatCard, setShowThreatCard] = useState(false);
+  const scrollViewRef = useRef(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSecurityAlert(true);
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleCloseSecurityAlert = () => {
+    setShowSecurityAlert(false);
+    setShowThreatCard(true);
+    // Auto-scroll to threat card after a short delay
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 300);
+  };
+
+  const handleExpandThreatCard = () => {
+    setShowThreatCard(false);
+    setShowSecurityAlert(true);
+  };
   const [cameras, setCameras] = useState([
     {
       id: 1,
       name: 'Front-door Camera',
       location: 'Main Entrance',
       rtspUrl: null,
-      isOnline: false
+      isOnline: true
     },
     {
       id: 2,
@@ -37,7 +64,11 @@ const DashboardScreen = ({ navigation }) => {
 
   return (
     <View style={[styles.container, { backgroundColor: '#212121' }]}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        ref={scrollViewRef}
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.dashboardTitle}>Dashboard</Text>
@@ -131,6 +162,12 @@ const DashboardScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
+        {/* Security Alert Modal */}
+        <SecurityAlertModal 
+          visible={showSecurityAlert}
+          onClose={handleCloseSecurityAlert}
+        />
+
         {/* My Cameras Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -166,7 +203,15 @@ const DashboardScreen = ({ navigation }) => {
                     </View>
                   </View>
                   <View style={styles.cameraIconArea}>
-                    {camera.rtspUrl ? (
+                    {camera.id === 1 ? (
+                      <>
+                        <VideoPlayer style={styles.videoPlayer} />
+                        <View style={styles.liveIndicator}>
+                          <View style={styles.liveDot} />
+                          <Text style={styles.liveText}>LIVE</Text>
+                        </View>
+                      </>
+                    ) : camera.rtspUrl ? (
                       <>
                         <View style={styles.videoStream}>
                           <Text style={styles.streamingText}>RTSP Stream Ready</Text>
@@ -216,7 +261,11 @@ const DashboardScreen = ({ navigation }) => {
           </ScrollView>
         </View>
 
-
+        {/* Threat Card - appears below camera section when modal is closed */}
+        <ThreatCard 
+          visible={showThreatCard}
+          onExpand={handleExpandThreatCard}
+        />
 
         <View style={styles.bottomPadding} />
       </ScrollView>
@@ -455,7 +504,7 @@ const styles = StyleSheet.create({
     borderColor: '#555555',
   },
   cameraFullContainer: {
-    height: 132,
+    height: 180,
   },
   cameraHeader: {
     flexDirection: 'row',
@@ -625,6 +674,13 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 10,
     fontWeight: 'bold',
+  },
+  videoPlayer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
 
   liveStreamButton: {

@@ -106,6 +106,10 @@ const OnboardingScreen = ({ navigation }) => {
             </Text>
           </TouchableOpacity>
         </View>
+        
+        <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate('SignIn')}>
+          <Text style={styles.loginButtonText}>Already have an account? Login</Text>
+        </TouchableOpacity>
       </View>
     </LinearGradient>
   );
@@ -225,6 +229,16 @@ const styles = StyleSheet.create({
   backButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
+    fontWeight: '500',
+  },
+  loginButton: {
+    marginTop: 20,
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  loginButtonText: {
+    color: '#4A9EFF',
+    fontSize: 14,
     fontWeight: '500',
   },
 });
