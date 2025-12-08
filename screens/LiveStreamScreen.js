@@ -27,9 +27,10 @@ const LiveStreamScreen = ({ navigation }) => {
     },
     {
       id: 2,
-      name: 'Back Yard Camera',
-      url: 'rtsp://admin:password@192.168.1.101:554/stream1',
-      isActive: false
+      name: 'Backyard Camera',
+      url: require('../WeaponDetectionVideo.mp4'),
+      isActive: false,
+      hasWeaponDetection: true
     }
   ]);
 
@@ -155,12 +156,20 @@ const LiveStreamScreen = ({ navigation }) => {
                   size={20} 
                   color={stream.isActive ? "#4A9EFF" : "#FFFFFF"} 
                 />
-                <Text style={[
-                  styles.streamName,
-                  stream.isActive && styles.streamNameActive
-                ]}>
-                  {stream.name}
-                </Text>
+                <View style={styles.streamTextContainer}>
+                  <Text style={[
+                    styles.streamName,
+                    stream.isActive && styles.streamNameActive
+                  ]}>
+                    {stream.name}
+                  </Text>
+                  {stream.hasWeaponDetection && (
+                    <View style={styles.weaponDetectionBadge}>
+                      <Ionicons name="shield-checkmark" size={12} color="#FF6B6B" />
+                      <Text style={styles.weaponDetectionText}>Weapon Detection</Text>
+                    </View>
+                  )}
+                </View>
               </View>
               <Ionicons 
                 name="chevron-forward" 
@@ -324,6 +333,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
+  streamTextContainer: {
+    flex: 1,
+  },
   streamName: {
     color: '#FFFFFF',
     fontSize: 16,
@@ -331,6 +343,17 @@ const styles = StyleSheet.create({
   streamNameActive: {
     color: '#4A9EFF',
     fontWeight: '600',
+  },
+  weaponDetectionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 4,
+  },
+  weaponDetectionText: {
+    color: '#FF6B6B',
+    fontSize: 12,
+    fontWeight: '500',
   },
   infoContainer: {
     backgroundColor: 'rgba(64,64,64,0.7)',

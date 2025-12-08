@@ -10,8 +10,8 @@ const OnboardingScreen = ({ navigation }) => {
   const screens = [
     {
       title: 'Welcome to',
-      subtitle: 'OBEX Mobile App',
-      description: '',
+      subtitle: 'OBEX',
+      description: 'Your intelligent security companion that monitors, analyzes, and protects your space with advanced AI-powered surveillance.',
       image: require('../Obex_Shield.png')
     },
     {
@@ -69,17 +69,20 @@ const OnboardingScreen = ({ navigation }) => {
       )}
       
       <View style={styles.content}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.title}>{screens[currentStep].title}</Text>
+          <Text style={styles.subtitle}>{screens[currentStep].subtitle}</Text>
+        </View>
+        
         <View style={styles.imageContainer}>
           <Image source={screens[currentStep].image} style={styles.image} />
         </View>
         
-        <View style={styles.textContainer}>
-          <Text style={styles.title}>{screens[currentStep].title}</Text>
-          <Text style={styles.subtitle}>{screens[currentStep].subtitle}</Text>
-          {screens[currentStep].description ? (
+        {screens[currentStep].description ? (
+          <View style={styles.descriptionContainer}>
             <Text style={styles.description}>{screens[currentStep].description}</Text>
-          ) : null}
-        </View>
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.bottomSection}>
@@ -128,7 +131,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   imageContainer: {
-    marginBottom: 40,
     alignItems: 'center',
   },
   image: {
@@ -137,9 +139,15 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     resizeMode: 'contain',
   },
-  textContainer: {
+  headerContainer: {
     alignItems: 'center',
     paddingHorizontal: 20,
+    marginBottom: 40,
+  },
+  descriptionContainer: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginTop: 40,
   },
   title: {
     fontSize: 32,
@@ -151,7 +159,6 @@ const styles = StyleSheet.create({
     fontSize: 32,
     color: '#4A9EFF',
     fontWeight: '600',
-    marginBottom: 30,
   },
   description: {
     fontSize: 16,

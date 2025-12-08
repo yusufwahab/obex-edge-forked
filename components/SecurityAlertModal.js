@@ -1,14 +1,22 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 const SecurityAlertModal = ({ visible, onClose }) => {
+  const [isWeaponDetection, setIsWeaponDetection] = useState(false);
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (visible) {
+      setIsWeaponDetection(false);
+      
+      // Change to weapon detection after 10 seconds
+      const weaponTimer = setTimeout(() => {
+        setIsWeaponDetection(true);
+      }, 10000);
+      
       // Entry animation
       Animated.sequence([
         Animated.timing(scaleAnim, {
@@ -49,10 +57,13 @@ const SecurityAlertModal = ({ visible, onClose }) => {
           }),
         ])
       ).start();
+      
+      return () => clearTimeout(weaponTimer);
     } else {
       scaleAnim.setValue(0);
       pulseAnim.setValue(1);
       opacityAnim.setValue(0);
+      setIsWeaponDetection(false);
     }
   }, [visible]);
 
@@ -86,7 +97,7 @@ const SecurityAlertModal = ({ visible, onClose }) => {
 
         {/* Alert Icon */}
         <View style={styles.iconContainer}>
-          <Ionicons name="person-circle" size={40} color="#991b1b" />
+          <Ionicons name={isWeaponDetection ? "shield" : "person-circle"} size={40} color="#991b1b" />
           <View style={styles.alertBadge}>
             <Ionicons name="warning" size={16} color="#FFFFFF" />
           </View>
@@ -94,8 +105,8 @@ const SecurityAlertModal = ({ visible, onClose }) => {
 
         {/* Main Content */}
         <View style={styles.content}>
-          <Text style={styles.title}>Threat</Text>
-          <Text style={styles.description}>Aggression Detected</Text>
+          <Text style={styles.title}>{isWeaponDetection ? "Weapon Detected" : "Threat"}</Text>
+          <Text style={styles.description}>{isWeaponDetection ? "Weapon Detected" : "Aggression Detected"}</Text>
 
           {/* Metadata */}
           <View style={styles.metadata}>
@@ -105,7 +116,7 @@ const SecurityAlertModal = ({ visible, onClose }) => {
             </View>
             <View style={styles.metaItem}>
               <Ionicons name="videocam" size={12} color="#9ca3af" />
-              <Text style={styles.metaText}>Front-door Camera</Text>
+              <Text style={styles.metaText}>{isWeaponDetection ? "John's Vehicle Camera" : "Front-door Camera"}</Text>
             </View>
             <View style={styles.metaItem}>
               <Ionicons name="time" size={12} color="#9ca3af" />

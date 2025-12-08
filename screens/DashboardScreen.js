@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AddCameraModal from '../components/AddCameraModal';
 import RTSPPlayer from '../components/RTSPPlayer';
 import VideoPlayer from '../components/VideoPlayer';
+import { Video } from 'expo-av';
 import SecurityAlertModal from '../components/SecurityAlertModal';
 import ThreatCard from '../components/ThreatCard';
 
@@ -44,10 +45,20 @@ const DashboardScreen = ({ navigation }) => {
     },
     {
       id: 2,
-      name: 'Back-yard Camera',
+      name: 'John Vehicle Cam',
       location: 'Garden Area',
       rtspUrl: null,
-      isOnline: false
+      isOnline: true,
+      hasWeaponDetection: true
+    },
+    {
+      id: 3,
+      name: 'Security Alert Camera',
+      location: 'Weapon Detection Zone',
+      rtspUrl: null,
+      isOnline: true,
+      hasWeaponDetection: true,
+      isAlert: true
     }
   ]);
 
@@ -211,6 +222,25 @@ const DashboardScreen = ({ navigation }) => {
                           <Text style={styles.liveText}>LIVE</Text>
                         </View>
                       </>
+                    ) : camera.id === 2 ? (
+                      <>
+                        <VideoPlayer style={styles.videoPlayer} weaponDetection={true} />
+                        <View style={styles.liveIndicator}>
+                          <View style={styles.liveDot} />
+                          <Text style={styles.liveText}>LIVE</Text>
+                        </View>
+                      </>
+                    ) : camera.id === 3 ? (
+                      <TouchableOpacity 
+                        style={styles.cameraIconArea}
+                        onPress={() => navigation.navigate('History', { weaponDetection: true })}
+                      >
+                        <VideoPlayer style={styles.videoPlayer} weaponDetection={true} />
+                        <View style={[styles.liveIndicator, styles.alertIndicator]}>
+                          <Ionicons name="warning" size={12} color="#FFFFFF" />
+                          <Text style={styles.liveText}>ALERT</Text>
+                        </View>
+                      </TouchableOpacity>
                     ) : camera.rtspUrl ? (
                       <>
                         <View style={styles.videoStream}>
@@ -675,12 +705,21 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: 'bold',
   },
+  weaponDetectionIndicator: {
+    backgroundColor: 'rgba(255,107,107,0.9)',
+    paddingHorizontal: 8,
+  },
+  alertIndicator: {
+    backgroundColor: 'rgba(255,69,0,0.9)',
+    paddingHorizontal: 8,
+  },
   videoPlayer: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
+    backgroundColor: '#000000',
   },
 
   liveStreamButton: {

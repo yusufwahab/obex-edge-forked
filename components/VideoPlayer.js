@@ -3,7 +3,7 @@ import { View, StyleSheet, TouchableOpacity, Modal, Dimensions } from 'react-nat
 import { Video } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 
-const VideoPlayer = ({ style, showFullscreenButton = true }) => {
+const VideoPlayer = ({ style, showFullscreenButton = true, source, shouldPlay = true, isLooping = false, isMuted = false, weaponDetection = false }) => {
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const videoRef = useRef(null);
@@ -11,15 +11,26 @@ const VideoPlayer = ({ style, showFullscreenButton = true }) => {
   const videos = [
     require('../Video 1.mp4'),
     require('../Video2.mp4'),
-    require('../video3.mp4')
+    require('../video3.mp4'),
+    require('../Video5.mp4')
   ];
+  
+  const videoSource = weaponDetection ? videos[3] : (source || videos[currentVideoIndex]);
 
   const playNextVideo = () => {
+    if (weaponDetection) return;
     setTimeout(() => {
       const nextIndex = (currentVideoIndex + 1) % videos.length;
       setCurrentVideoIndex(nextIndex);
     }, 50);
   };
+
+  // videoSource is now defined above
+  
+  // Force autoplay and loop for specific source or weapon detection
+  const videoShouldPlay = (source || weaponDetection) ? true : shouldPlay;
+  const videoIsLooping = (source || weaponDetection) ? true : isLooping;
+  const videoIsMuted = (source || weaponDetection) ? true : isMuted;
 
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen);
@@ -29,17 +40,20 @@ const VideoPlayer = ({ style, showFullscreenButton = true }) => {
     <View style={containerStyle}>
       <Video
         ref={videoRef}
-        source={videos[currentVideoIndex]}
+        source={videoSource}
         style={styles.video}
-        shouldPlay
-        isLooping={false}
+        shouldPlay={videoShouldPlay}
+        isLooping={videoIsLooping}
+        isMuted={videoIsMuted}
         resizeMode="cover"
         useNativeControls={false}
         onPlaybackStatusUpdate={(status) => {
-          if (status.didJustFinish) {
+          if (status.didJustFinish && !source) {
             playNextVideo();
           }
         }}
+        onError={(error) => console.log('Video error:', error)}
+        onLoad={() => console.log('Video loaded successfully')}
       />
       {showFullscreenButton && (
         <TouchableOpacity style={styles.fullscreenButton} onPress={toggleFullscreen}>
