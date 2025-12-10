@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions } from 'react-native';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const SecurityAlertModal = ({ visible, onClose }) => {
   const [isWeaponDetection, setIsWeaponDetection] = useState(false);
@@ -69,8 +72,6 @@ const SecurityAlertModal = ({ visible, onClose }) => {
 
   if (!visible) return null;
 
-
-
   return (
     <View style={styles.overlay}>
       <Animated.View
@@ -90,48 +91,59 @@ const SecurityAlertModal = ({ visible, onClose }) => {
           <View style={styles.criticalBadge}>
             <Text style={styles.criticalText}>CRITICAL</Text>
           </View>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Ionicons name="close" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
+          
+
         </View>
+
+        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <Ionicons name="close" size={20} color="#FFFFFF" />
+        </TouchableOpacity>
 
         {/* Alert Icon */}
         <View style={styles.iconContainer}>
-          <Ionicons name={isWeaponDetection ? "shield" : "person-circle"} size={40} color="#991b1b" />
-          <View style={styles.alertBadge}>
-            <Ionicons name="warning" size={16} color="#FFFFFF" />
-          </View>
+          <Ionicons name="warning" size={50} color="#FF0000" />
         </View>
 
         {/* Main Content */}
         <View style={styles.content}>
-          <Text style={styles.title}>{isWeaponDetection ? "Weapon Detected" : "Threat"}</Text>
-          <Text style={styles.description}>{isWeaponDetection ? "Weapon Detected" : "Aggression Detected"}</Text>
+          <Text style={styles.title}>Aggression Detected</Text>
+          <Text style={styles.description}>Aggressive behavior detected in vehicle interior.</Text>
 
           {/* Metadata */}
           <View style={styles.metadata}>
             <View style={styles.metaItem}>
-              <Ionicons name="location" size={12} color="#9ca3af" />
+              <Ionicons name="location" size={18} color="rgba(255, 255, 255, 0.6)" />
               <Text style={styles.metaText}>Vehicle front seat</Text>
             </View>
             <View style={styles.metaItem}>
-              <Ionicons name="videocam" size={12} color="#9ca3af" />
-              <Text style={styles.metaText}>{isWeaponDetection ? "John's Vehicle Camera" : "Front-door Camera"}</Text>
+              <Ionicons name="shield" size={18} color="rgba(255, 255, 255, 0.6)" />
+              <Text style={styles.metaText}>Front-door Camera</Text>
             </View>
             <View style={styles.metaItem}>
-              <Ionicons name="time" size={12} color="#9ca3af" />
+              <Ionicons name="time" size={18} color="rgba(255, 255, 255, 0.6)" />
               <Text style={styles.metaText}>1h ago</Text>
             </View>
           </View>
         </View>
 
-        {/* Footer */}
-        <View style={styles.footer}>
+        {/* Divider */}
+        <View style={styles.divider} />
+
+        {/* Threat Level */}
+        <View style={styles.threatHeader}>
           <Text style={styles.threatLabel}>Threat Level</Text>
           <Text style={styles.threatPercentage}>96%</Text>
         </View>
+
+        {/* Progress Bar */}
         <View style={styles.progressBarContainer}>
-          <View style={[styles.progressBar, { width: '96%' }]} />
+          <LinearGradient
+            colors={['#4CAF50', '#FDD835', '#FF5722']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.progressBar, { width: '96%' }]}
+          />
+          <View style={styles.triangleIndicator} />
         </View>
       </Animated.View>
     </View>
@@ -147,21 +159,23 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     zIndex: 1000,
   },
   container: {
-    width: 300,
-    backgroundColor: '#1a1a1a',
-    borderRadius: 16,
+    width: SCREEN_WIDTH * 0.9,
+    maxWidth: 350,
+    maxHeight: SCREEN_HEIGHT * 0.8,
+    backgroundColor: '#1E1E1E',
+    borderRadius: 20,
     borderWidth: 3,
-    borderColor: '#dc2626',
-    padding: 20,
-    shadowColor: '#dc2626',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 20,
-    elevation: 10,
+    borderColor: '#FF0000',
+    padding: 16,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.6,
+    shadowRadius: 32,
+    elevation: 16,
   },
   header: {
     flexDirection: 'row',
@@ -170,83 +184,112 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   criticalBadge: {
-    backgroundColor: '#dc2626',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
+    backgroundColor: '#FF0000',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
+    width: 140,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   criticalText: {
     color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '700',
   },
+
   closeButton: {
-    padding: 4,
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 36,
+    height: 36,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   iconContainer: {
+    width: 110,
+    height: 110,
+    backgroundColor: 'rgba(80, 20, 20, 1)',
+    borderRadius: 18,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
-    position: 'relative',
-  },
-  alertBadge: {
-    position: 'absolute',
-    top: -2,
-    right: 110,
-    backgroundColor: '#dc2626',
-    borderRadius: 10,
-    padding: 2,
+    marginBottom: 20,
   },
   content: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   title: {
     color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 12,
   },
   description: {
-    color: '#9ca3af',
+    color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 14,
+    lineHeight: 20,
     marginBottom: 16,
   },
   metadata: {
-    gap: 8,
+    gap: 13,
   },
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 9,
   },
   metaText: {
-    color: '#9ca3af',
-    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 13,
   },
-  footer: {
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginVertical: 8,
+  },
+  threatHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   threatLabel: {
-    color: '#9ca3af',
-    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 15,
+    fontWeight: '400',
   },
   threatPercentage: {
     color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '700',
   },
   progressBarContainer: {
-    height: 6,
-    backgroundColor: '#333333',
-    borderRadius: 3,
-    overflow: 'hidden',
+    height: 9,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    overflow: 'visible',
+    position: 'relative',
   },
   progressBar: {
     height: '100%',
-    backgroundColor: '#dc2626',
-    borderRadius: 3,
+    borderRadius: 8,
+  },
+  triangleIndicator: {
+    position: 'absolute',
+    bottom: -8,
+    left: '92%',
+    width: 0,
+    height: 0,
+    borderLeftWidth: 4,
+    borderRightWidth: 4,
+    borderBottomWidth: 8,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: '#FF0000',
   },
 });
 

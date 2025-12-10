@@ -192,13 +192,8 @@ const DashboardScreen = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
-          {/* Scrollable Camera Grid */}
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            style={styles.cameraScrollView}
-            contentContainerStyle={styles.cameraScrollContent}
-          >
+          {/* Camera Grid */}
+          <View style={styles.cameraGrid}>
             {cameras.map((camera) => (
               <View key={camera.id} style={styles.cameraCard}>
                 <LinearGradient
@@ -288,7 +283,7 @@ const DashboardScreen = ({ navigation }) => {
               </View>
               <Text style={styles.addCameraText}>Add New Camera</Text>
             </TouchableOpacity>
-          </ScrollView>
+          </View>
         </View>
 
         {/* Threat Card - appears below camera section when modal is closed */}
@@ -519,16 +514,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  cameraScrollView: {
-    marginBottom: 16,
-  },
-  cameraScrollContent: {
-    paddingRight: 16,
+  cameraGrid: {
+    gap: 16,
   },
   cameraCard: {
     borderRadius: 12,
-    width: 280,
-    marginRight: 16,
     overflow: 'hidden',
     borderWidth: 0.2,
     borderColor: '#555555',

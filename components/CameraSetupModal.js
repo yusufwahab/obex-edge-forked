@@ -1,46 +1,29 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Image, ScrollView } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions } from 'react-native';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const CameraSetupModal = ({ visible, onClose }) => {
   const [currentStep, setCurrentStep] = useState(0);
 
   const steps = [
     {
-      title: 'Welcome to OBEX!',
-      subtitle: 'Let\'s set up your first camera',
-      description: 'Follow these simple steps to connect your security camera and start monitoring your space.',
-      image: require('../Camera-img.png'),
-      icon: 'videocam'
+      title: 'Add your First Camera',
+      description: 'Set up surveillance by adding and configuring your cameras.',
+      position: { left: 30, top: 150 },
+      tailDirection: 'down'
     },
     {
-      title: 'Connect to WiFi',
-      subtitle: 'Same Network Required',
-      description: 'Make sure your phone and camera are connected to the same WiFi network. This is essential for RTSP streaming.',
-      image: require('../Configure_Zones.png'),
-      icon: 'wifi'
+      title: 'Configure Zones',
+      description: 'Define specific monitoring areas and zones for targeted security.',
+      position: { left: '50%', top: 500, translateX: -140 },
+      tailDirection: 'down'
     },
     {
-      title: 'Find Camera IP',
-      subtitle: 'Check Router Settings',
-      description: 'Look in your router\'s admin panel or use a network scanner app to find your camera\'s IP address.',
-      image: require('../Dashboard_Icons.png'),
-      icon: 'search'
-    },
-    {
-      title: 'Add Camera',
-      subtitle: 'Tap the + Button',
-      description: 'In the dashboard, tap "Add" to create a new camera connection. Enter your camera\'s RTSP URL.',
-      image: require('../Add_Camera.png'),
-      icon: 'add-circle'
-    },
-    {
-      title: 'You\'re All Set!',
-      subtitle: 'Start Monitoring',
-      description: 'Your camera is now connected. You can view live streams, receive alerts, and monitor your space 24/7.',
-      image: require('../Monitor_Alerts.png'),
-      icon: 'checkmark-circle'
+      title: 'Monitor an Alert',
+      description: 'Receive real-time notifications for security events.',
+      position: { right: 30, top: 200 },
+      tailDirection: 'down'
     }
   ];
 
@@ -52,202 +35,169 @@ const CameraSetupModal = ({ visible, onClose }) => {
     }
   };
 
-  const handleBack = () => {
+  const handlePrevious = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
   };
 
-  const handleSkip = () => {
-    onClose();
+  const getModalStyle = () => {
+    const step = steps[currentStep];
+    const style = {
+      position: 'absolute',
+      width: 280,
+    };
+
+    if (step.position.left !== undefined) {
+      style.left = step.position.left;
+    }
+    if (step.position.right !== undefined) {
+      style.right = step.position.right;
+    }
+    if (step.position.left === '50%') {
+      style.left = '50%';
+      style.marginLeft = step.position.translateX;
+    }
+    style.top = step.position.top;
+
+    return style;
   };
+
+  if (!visible) return null;
 
   return (
     <Modal
       visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
+      transparent={true}
+      animationType="fade"
+      onRequestClose={onClose}
     >
-      <LinearGradient colors={['#000000', '#404040', '#000000']} locations={[0, 0.5, 1]} style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Ionicons name="close" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.stepContainer}>
-            <View style={styles.iconContainer}>
-              <Ionicons name={steps[currentStep].icon} size={48} color="#4A9EFF" />
-            </View>
-
-            <View style={styles.imageContainer}>
-              <Image source={steps[currentStep].image} style={styles.image} />
-            </View>
-
-            <View style={styles.textContainer}>
-              <Text style={styles.title}>{steps[currentStep].title}</Text>
-              <Text style={styles.subtitle}>{steps[currentStep].subtitle}</Text>
-              <Text style={styles.description}>{steps[currentStep].description}</Text>
-            </View>
-          </View>
-        </ScrollView>
-
-        <View style={styles.bottomSection}>
-          <View style={styles.progressContainer}>
-            {steps.map((_, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.progressDot,
-                  index === currentStep ? styles.progressDotActive : styles.progressDotInactive
-                ]}
-              />
-            ))}
+      <View style={styles.overlay}>
+        <View style={[styles.modalContainer, getModalStyle()]}>
+          <View style={styles.content}>
+            <Text style={styles.title}>{steps[currentStep].title}</Text>
+            <Text style={styles.description}>{steps[currentStep].description}</Text>
+            <Text style={styles.progress}>{currentStep + 1} of {steps.length}</Text>
           </View>
 
           <View style={styles.buttonContainer}>
-            {currentStep > 0 && (
-              <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-                <Text style={styles.backButtonText}>← Back</Text>
-              </TouchableOpacity>
-            )}
-            
-            <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-              <Text style={styles.skipButtonText}>Skip</Text>
+            <TouchableOpacity
+              style={[
+                styles.button,
+                styles.previousButton,
+                currentStep === 0 && styles.buttonDisabled
+              ]}
+              onPress={handlePrevious}
+              disabled={currentStep === 0}
+            >
+              <Text style={[
+                styles.buttonText,
+                styles.previousButtonText,
+                currentStep === 0 && styles.buttonTextDisabled
+              ]}>
+                Previous
+              </Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-              <Text style={styles.nextButtonText}>
-                {currentStep === steps.length - 1 ? 'Get Started' : 'Next'}
+
+            <TouchableOpacity
+              style={[styles.button, styles.nextButton]}
+              onPress={handleNext}
+            >
+              <Text style={[styles.buttonText, styles.nextButtonText]}>
+                {currentStep === steps.length - 1 ? 'Start' : 'Next'}
               </Text>
             </TouchableOpacity>
           </View>
+
+          <View style={styles.tail} />
         </View>
-      </LinearGradient>
+      </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  overlay: {
     flex: 1,
-    backgroundColor: '#0B1437',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 20,
-  },
-  closeButton: {
-    padding: 8,
+  modalContainer: {
+    backgroundColor: 'rgba(40, 40, 40, 0.95)',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    padding: 28,
+    width: 280,
   },
   content: {
-    flex: 1,
-    paddingHorizontal: 24,
-  },
-  stepContainer: {
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  iconContainer: {
-    marginBottom: 20,
-  },
-  imageContainer: {
-    marginBottom: 30,
-    alignItems: 'center',
-  },
-  image: {
-    width: 200,
-    height: 150,
-    resizeMode: 'contain',
-  },
-  textContainer: {
-    alignItems: 'center',
-    paddingHorizontal: 20,
+    marginBottom: 24,
   },
   title: {
-    fontSize: 28,
-    color: '#FFFFFF',
+    fontSize: 22,
     fontWeight: '600',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 20,
-    color: '#4A9EFF',
-    fontWeight: '500',
-    marginBottom: 20,
-    textAlign: 'center',
+    color: '#FFFFFF',
+    marginBottom: 12,
+    textAlign: 'left',
   },
   description: {
-    fontSize: 16,
-    color: '#CCCCCC',
-    textAlign: 'center',
-    lineHeight: 24,
-    paddingHorizontal: 10,
+    fontSize: 15,
+    fontWeight: '400',
+    color: 'rgba(255, 255, 255, 0.8)',
+    lineHeight: 22,
+    marginBottom: 16,
   },
-  bottomSection: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-  },
-  progressContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 30,
-  },
-  progressDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginHorizontal: 4,
-  },
-  progressDotActive: {
-    backgroundColor: '#4A9EFF',
-  },
-  progressDotInactive: {
-    backgroundColor: 'rgba(255,255,255,0.3)',
+  progress: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.6)',
+    textAlign: 'left',
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: 12,
+  },
+  button: {
+    flex: 1,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  backButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+  previousButton: {
     borderWidth: 1,
-    borderColor: '#FFFFFF',
-    borderRadius: 8,
-  },
-  backButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  skipButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  skipButtonText: {
-    color: '#8B92A7',
-    fontSize: 14,
-    fontWeight: '500',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'transparent',
   },
   nextButton: {
-    backgroundColor: '#4A9EFF',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    minWidth: 100,
-    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  previousButtonText: {
+    color: '#FFFFFF',
   },
   nextButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
+    color: '#000000',
+  },
+  buttonTextDisabled: {
+    color: 'rgba(255, 255, 255, 0.5)',
+  },
+  tail: {
+    position: 'absolute',
+    bottom: -20,
+    left: '50%',
+    marginLeft: -10,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 20,
+    borderTopWidth: 20,
+    borderLeftColor: 'transparent',
+    borderTopColor: 'rgba(40, 40, 40, 0.95)',
   },
 });
 

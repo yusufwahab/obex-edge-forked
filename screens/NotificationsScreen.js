@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const NotificationsScreen = ({ navigation }) => {
+  const [filter, setFilter] = useState('all');
+  const insets = useSafeAreaInsets();
+  
   const notifications = [
     {
       id: 1,
@@ -69,6 +73,22 @@ const NotificationsScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
+        {/* Filter Buttons */}
+        <View style={styles.filterContainer}>
+          <TouchableOpacity 
+            style={[styles.filterButton, filter === 'all' && styles.activeFilter]}
+            onPress={() => setFilter('all')}
+          >
+            <Text style={[styles.filterText, filter === 'all' && styles.activeFilterText]}>All</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.filterButton, filter === 'unread' && styles.activeFilter]}
+            onPress={() => setFilter('unread')}
+          >
+            <Text style={[styles.filterText, filter === 'unread' && styles.activeFilterText]}>Unread</Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.divider}>
           <LinearGradient
             colors={['#666666', '#FFFFFF', '#666666']}
@@ -80,7 +100,9 @@ const NotificationsScreen = ({ navigation }) => {
 
         {/* Notifications List */}
         <View style={styles.notificationsList}>
-          {notifications.map((notification) => (
+          {notifications
+            .filter(notification => filter === 'all' || (filter === 'unread' && notification.unread))
+            .map((notification) => (
             <TouchableOpacity 
               key={notification.id} 
               style={[styles.notificationItem, notification.unread && styles.unreadItem]}
@@ -109,7 +131,7 @@ const NotificationsScreen = ({ navigation }) => {
       </ScrollView>
 
       {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
+      <View style={[styles.bottomNav, { paddingBottom: insets.bottom }]}>
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigation.navigate('Dashboard')}
@@ -165,6 +187,32 @@ const styles = StyleSheet.create({
     color: '#4A9EFF',
     fontSize: 14,
     fontWeight: '500',
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    marginTop: 20,
+    gap: 12,
+  },
+  filterButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: 'transparent',
+  },
+  activeFilter: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FFFFFF',
+  },
+  filterText: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  activeFilterText: {
+    color: '#000000',
   },
   divider: {
     marginHorizontal: 16,

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, Keyboard, TouchableWithoutFeedback, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import CameraSetupModal from './CameraSetupModal';
+import AuthService from '../services/auth';
 
 export default function SignUp({ navigation }) {
   const [fullName, setFullName] = useState('');
@@ -11,13 +12,31 @@ export default function SignUp({ navigation }) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showCameraSetup, setShowCameraSetup] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
     if (!fullName || !phoneNumber || !email || !password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
-    setShowCameraSetup(true);
+
+    setLoading(true);
+    try {
+      const response = await AuthService.register({
+        fullName,
+        phoneNumber,
+        email,
+        password,
+      });
+
+      Alert.alert('Success', 'Account created successfully!');
+      setShowCameraSetup(true);
+    } catch (error) {
+      Alert.alert('Error', error.message || 'Registration failed');
+      console.error('Registration error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCameraSetupClose = () => {
@@ -27,7 +46,13 @@ export default function SignUp({ navigation }) {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <LinearGradient colors={['#000000', '#404040', '#000000']} locations={[0, 0.5, 1]} style={styles.container}>
+      <View style={styles.container}>
+        <LinearGradient
+          colors={['#999999', 'transparent', '#999999']}
+          locations={[0, 0.5, 1]}
+          style={styles.borderGradient}
+        >
+        <View style={styles.cardContainer}>
         <View style={styles.content}>
         <View style={styles.logoContainer}>
           <Image source={require('../obex-logo-joined.png')} style={styles.logo} />
@@ -102,8 +127,12 @@ export default function SignUp({ navigation }) {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.submitButton} onPress={handleSignUp}>
-          <Text style={styles.submitButtonText}>Create Account</Text>
+        <TouchableOpacity style={[styles.submitButton, loading && styles.submitButtonDisabled]} onPress={handleSignUp} disabled={loading}>
+          {loading ? (
+            <ActivityIndicator size="small" color="#000000" />
+          ) : (
+            <Text style={styles.submitButtonText}>Create Account</Text>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity 
@@ -118,12 +147,14 @@ export default function SignUp({ navigation }) {
           </Text>
         </TouchableOpacity>
         </View>
+        </View>
+        </LinearGradient>
         
         <CameraSetupModal 
           visible={showCameraSetup}
           onClose={handleCameraSetupClose}
         />
-      </LinearGradient>
+      </View>
     </TouchableWithoutFeedback>
   );
 }
@@ -131,20 +162,28 @@ export default function SignUp({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B1437',
+    backgroundColor: '#000000',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
   },
+  borderGradient: {
+    borderRadius: 30,
+    padding: 1,
+  },
+  cardContainer: {
+    backgroundColor: '#262626',
+    borderRadius: 30,
+    padding: 24,
+    width: 321,
+    height: 677,
+  },
   content: {
-    paddingHorizontal: 32,
-    paddingVertical: 40,
     width: '100%',
-    maxWidth: 400,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   logo: {
     width: 80,
@@ -159,16 +198,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   titleAccent: {
-    color: '#4A9EFF',
+    color: '#2F80ED',
   },
   subtitle: {
     fontSize: 14,
     color: '#8B92A7',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: 12,
   },
   label: {
     fontSize: 14,
@@ -178,10 +217,9 @@ const styles = StyleSheet.create({
   },
   inputWrapper: {
     position: 'relative',
-    backgroundColor: '#1A1A1A',
-    borderRadius: 0,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: '#2C2C2E',
+    borderRadius: 12,
+    borderWidth: 0,
     height: 48,
   },
   leftIcon: {
@@ -206,14 +244,24 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     backgroundColor: '#FFFFFF',
-    height: 50,
-    borderRadius: 0,
+    width: 211,
+    height: 47,
+    borderRadius: 999,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 24,
+    alignSelf: 'center',
+    marginTop: 2,
+    shadowColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  submitButtonDisabled: {
+    opacity: 0.7,
   },
   submitButtonText: {
-    color: '#1A2342',
+    color: '#000000',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -221,7 +269,6 @@ const styles = StyleSheet.create({
     color: '#8B92A7',
     fontSize: 14,
     textAlign: 'center',
-    marginTop: 16,
   },
   bottomLinkHighlight: {
     color: '#4A9EFF',
@@ -231,6 +278,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     alignItems: 'center',
-  },
-
+    marginTop: 12,
+  }
 });

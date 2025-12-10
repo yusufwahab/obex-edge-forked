@@ -11,46 +11,18 @@ const OnboardingScreen = ({ navigation }) => {
     {
       title: 'Welcome to',
       subtitle: 'OBEX',
-      description: 'Your intelligent security companion that monitors, analyzes, and protects your space with advanced AI-powered surveillance.',
+      featureTitle: 'Real-time Alerts',
+      description: "OBEX ensures you don\'t just watch events unfold, you act on them the moment they happen.",
       image: require('../Obex_Shield.png')
-    },
-    {
-      title: 'Real-time',
-      subtitle: 'Alerts',
-      description: 'OBEX ensures you don\'t just watch events unfold, you act on them the moment they happen.',
-      image: require('../Phone_Alerts 1.png')
-    },
-    {
-      title: 'Activity',
-      subtitle: 'Timeline',
-      description: 'See what happened, when it happened, and how OBEX responded all in a clean, visual interface.',
-      image: require('../Activity_Timeline 1.png')
-    },
-    {
-      title: 'Smart Video',
-      subtitle: 'Playback',
-      description: 'OBEX highlights key events and activities so you can quickly review what matters most.',
-      image: require('../Camera-img.png')
-    },
-    {
-      title: 'Predictive',
-      subtitle: 'Intelligence',
-      description: 'OBEX\'s AI learns patterns in your space, predicts potential risks, and warns you before incidents escalate.',
-      image: require('../Dashboard_Icons.png')
     }
   ];
 
   const handleNext = () => {
-    if (currentStep < screens.length - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      navigation.navigate('SignUp');
-    }
-  };
-
-  const handleSkip = () => {
+    console.log('Get Started pressed');
     navigation.navigate('SignUp');
   };
+
+
 
   const handleBack = () => {
     if (currentStep > 0) {
@@ -78,11 +50,10 @@ const OnboardingScreen = ({ navigation }) => {
           <Image source={screens[currentStep].image} style={styles.image} />
         </View>
         
-        {screens[currentStep].description ? (
-          <View style={styles.descriptionContainer}>
-            <Text style={styles.description}>{screens[currentStep].description}</Text>
-          </View>
-        ) : null}
+        <View style={styles.descriptionContainer}>
+          <Text style={styles.featureTitle}>{screens[currentStep].featureTitle}</Text>
+          <Text style={styles.description}>{screens[currentStep].description}</Text>
+        </View>
       </View>
 
       <View style={styles.bottomSection}>
@@ -98,17 +69,9 @@ const OnboardingScreen = ({ navigation }) => {
           ))}
         </View>
 
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-            <Text style={styles.skipButtonText}>Skip →</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-            <Text style={styles.nextButtonText}>
-              {currentStep === screens.length - 1 ? 'Get Started' : 'Next'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+          <Text style={styles.nextButtonText}>Get Started</Text>
+        </TouchableOpacity>
         
         <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate('SignIn')}>
           <Text style={styles.loginButtonText}>Already have an account? Login</Text>
@@ -124,6 +87,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#0B1437',
     paddingTop: 60,
     paddingHorizontal: 24,
+    minHeight: '100vh',
+    width: '100%',
   },
   content: {
     flex: 1,
@@ -150,22 +115,35 @@ const styles = StyleSheet.create({
     marginTop: 40,
   },
   title: {
-    fontSize: 32,
+    fontSize: 24,
     color: '#FFFFFF',
     fontWeight: '400',
+    lineHeight: 24,
     marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
-    fontSize: 32,
-    color: '#4A9EFF',
+    fontSize: 24,
+    color: '#2F80ED',
     fontWeight: '600',
+    lineHeight: 24,
+    textAlign: 'center',
+  },
+  featureTitle: {
+    fontSize: 20,
+    color: '#FFFFFF',
+    fontWeight: '600',
+    marginTop: 40,
+    marginBottom: 16,
+    textAlign: 'center',
   },
   description: {
     fontSize: 16,
-    color: '#FFFFFF',
+    color: '#9CA3AF',
     textAlign: 'center',
     lineHeight: 24,
     paddingHorizontal: 20,
+    marginBottom: 40,
   },
   bottomSection: {
     paddingBottom: 40,
@@ -189,33 +167,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FFFFFF',
   },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  skipButton: {
-    flex: 1,
-    height: 50,
+  nextButton: {
+    width: 243,
+    height: 44,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: '#FFFFFF',
-    borderRadius: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
-  },
-  skipButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  nextButton: {
-    flex: 1,
-    height: 50,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 12,
+    padding: 10,
+    alignSelf: 'center',
+    cursor: 'pointer',
   },
   nextButtonText: {
     color: '#0A1128',
@@ -232,6 +195,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FFFFFF',
     borderRadius: 0,
+    cursor: 'pointer',
   },
   backButtonText: {
     color: '#FFFFFF',
@@ -242,6 +206,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     alignItems: 'center',
     paddingVertical: 12,
+    cursor: 'pointer',
   },
   loginButtonText: {
     color: '#4A9EFF',
