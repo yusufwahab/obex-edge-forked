@@ -56,7 +56,7 @@ android {
 
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.anonymous.obexedge"
+    namespace 'com.anonymous.obexedge'
     defaultConfig {
         applicationId 'com.anonymous.obexedge'
         minSdk 26
