@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
+import './TestFRPC';
 import LogoLoadingScreen from './components/LogoLoadingScreen';
 import SignIn from './components/SignIn';
 import SignUp from './components/SignUp';

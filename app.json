@@ -41,10 +41,12 @@
         "android.permission.WAKE_LOCK",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
-      "usesCleartextTraffic": true
+      "usesCleartextTraffic": true,
+      "buildType": "developmentClient"
     },
     "web": {},
     "plugins": [
+      "expo-dev-client",
       "expo-asset",
       "expo-av",
       "./expo-plugins/android-min-sdk.js"
