@@ -1,4 +1,6 @@
-# Demo/Asset files only - NOT code files
+*.mp4
+*.zip
+*.png
 Activity_Timeline 1.png
 Add_Camera.png
 Camera-img.png
