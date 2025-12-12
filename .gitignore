@@ -36,8 +36,20 @@ dist/
 .expo-shared/
 web-build/
 web-report/
-android/
-ios/
+# Android build artifacts
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties
+android/**/*.iml
+android/.idea/
+android/.cxx/
+
+# iOS build artifacts
+ios/build/
+ios/Pods/
+ios/*.xcworkspace
+ios/*.xcuserdata
 .idea/
 *.suo
 *.ntvs*
