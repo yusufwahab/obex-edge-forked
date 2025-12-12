@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, AppState } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 let VLCPlayer;
@@ -14,6 +14,8 @@ try {
 const RTSPPlayer = ({ rtspUrl, style, onError, onLoad, showControls = true }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isActive, setIsActive] = useState(true);
+  const vlcRef = useRef(null);
 
   const handleLoadStart = () => {
     console.log('VLC Player: Load started for URL:', rtspUrl);
@@ -39,6 +41,17 @@ const RTSPPlayer = ({ rtspUrl, style, onError, onLoad, showControls = true }) =>
   useEffect(() => {
     console.log('RTSPPlayer mounted with URL:', rtspUrl);
     console.log('VLC Player available:', !!VLCPlayer);
+    
+    const handleAppStateChange = (nextAppState) => {
+      console.log('App state changed to:', nextAppState);
+      setIsActive(nextAppState === 'active');
+    };
+    
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    
+    return () => {
+      subscription?.remove();
+    };
   }, [rtspUrl]);
 
   if (!VLCPlayer) {
@@ -63,14 +76,18 @@ const RTSPPlayer = ({ rtspUrl, style, onError, onLoad, showControls = true }) =>
   return (
     <View style={[styles.container, style]}>
       <View style={styles.videoWrapper}>
-        <VLCPlayer
-          source={{ uri: rtspUrl }}
-          autoplay={true}
-          style={styles.player}
-          onLoadStart={handleLoadStart}
-          onLoad={handleLoad}
-          onError={handleError}
-        />
+        {isActive && (
+          <VLCPlayer
+            ref={vlcRef}
+            source={{ uri: rtspUrl }}
+            autoplay={true}
+            style={styles.player}
+            onLoadStart={handleLoadStart}
+            onLoad={handleLoad}
+            onError={handleError}
+            paused={!isActive}
+          />
+        )}
       </View>
       
       {loading && (
