@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.anonymous.obexedge'
+    namespace 'com.yusufwahabraotech.obexedge'
     defaultConfig {
-        applicationId 'com.anonymous.obexedge'
+        applicationId 'com.yusufwahabraotech.obexedge'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

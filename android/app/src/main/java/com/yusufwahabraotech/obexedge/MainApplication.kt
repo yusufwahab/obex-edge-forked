@@ -1,4 +1,4 @@
-package com.anonymous.obexedge
+package com.yusufwahabraotech.obexedge
 
 import android.app.Application
 import android.content.res.Configuration
@@ -15,7 +15,7 @@ import com.facebook.react.defaults.DefaultReactNativeHost
 
 import expo.modules.ApplicationLifecycleDispatcher
 import expo.modules.ReactNativeHostWrapper
-import com.anonymous.obexedge.frpc.FRPCPackage
+import com.yusufwahabraotech.obexedge.frpc.FRPCPackage
 
 class MainApplication : Application(), ReactApplication {
 

@@ -1,4 +1,4 @@
-package com.anonymous.obexedge.frpc
+package com.yusufwahabraotech.obexedge.frpc
 
 import android.app.*
 import android.content.Context

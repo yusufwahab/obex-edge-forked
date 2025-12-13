@@ -1,4 +1,4 @@
-package com.anonymous.obexedge.frpc
+package com.yusufwahabraotech.obexedge.frpc
 
 import android.util.Log
 import com.facebook.react.ReactPackage

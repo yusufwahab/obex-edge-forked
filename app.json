@@ -28,7 +28,7 @@
     },
     "android": {
       "backgroundColor": "#ffffff",
-      "package": "com.anonymous.obexedge",
+      "package": "com.yusufwahabraotech.obexedge",
       "minSdkVersion": 26,
       "compileSdkVersion": 36,
       "targetSdkVersion": 36,
