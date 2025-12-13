@@ -17,9 +17,6 @@ pluginManagement {
   includeBuild(expoPluginsPath)
 }
 
-// APPLY AUTOLINKING FIRST (before plugins!)
-apply from: new File(["node", "--print", "require.resolve('expo/package.json')"].execute(null, rootDir).text.trim(), "../scripts/autolinking.gradle")
-
 plugins {
   id("com.facebook.react.settings")
   id("expo-autolinking-settings")
