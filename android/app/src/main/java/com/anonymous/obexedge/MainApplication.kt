@@ -10,7 +10,7 @@ import com.anonymous.obexedge.frpc.FRPCPackage
 class MainApplication : Application(), ReactApplication {
 
   override val reactNativeHost: ReactNativeHost = object : DefaultReactNativeHost(this) {
-    override fun getPackages(): List<ReactPackage> = listOf(FRPCPackage())
+    override fun getPackages(): List<ReactPackage> = emptyList()
 
     override fun getJSMainModuleName(): String = "index"
 
