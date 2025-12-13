@@ -70,7 +70,7 @@ const LogoLoadingScreen = () => {
     <View style={styles.container}>
       {/* Combined logo */}
       <Animated.Image
-        source={require('../Component 16 (1).png')}
+        source={require('../logo-combined.png')}
         style={[
           styles.logo,
           {
