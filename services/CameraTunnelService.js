@@ -111,25 +111,45 @@ class CameraTunnelService {
   // Tunnel Control
   async setupAndStart() {
     try {
-      // Install FRPC binary if needed
-      await FRPCModule.installFRPCBinary();
+      if (!FRPCModule) {
+        throw new Error('FRPC native module not available - rebuild required');
+      }
       
       // Generate config from storage
-      const configPath = await this.generateConfigFromStorage();
+      const frpsConfig = await this.loadFRPSConfig();
+      const cameras = await this.getCameras();
       
-      // Start FRPC process
-      await FRPCModule.startFRPC(configPath);
+      if (!frpsConfig) {
+        throw new Error('FRPS server configuration not found');
+      }
       
-      // Start foreground service
-      await FRPCModule.startForegroundService();
+      const enabledCameras = cameras.filter(cam => cam.enabled);
+      if (enabledCameras.length === 0) {
+        throw new Error('No enabled cameras found');
+      }
       
-      // Update status
-      await StorageService.saveTunnelStatus({
-        isActive: true,
-        startedAt: new Date().toISOString()
-      });
+      // Use FRPC module with config
+      const config = {
+        serverAddr: frpsConfig.serverAddr,
+        serverPort: frpsConfig.serverPort,
+        token: frpsConfig.token,
+        localIp: enabledCameras[0].localIP,
+        localPort: enabledCameras[0].localPort,
+        remotePort: enabledCameras[0].remotePort
+      };
       
-      return { success: true, message: 'Tunnel started successfully' };
+      const result = await FRPCModule.startFRPC(config);
+      
+      if (result.success) {
+        await StorageService.saveTunnelStatus({
+          isActive: true,
+          startedAt: new Date().toISOString()
+        });
+        
+        return { success: true, message: `Tunnel started via ${result.method}` };
+      } else {
+        return { success: false, message: result.message };
+      }
       
     } catch (error) {
       console.error('Failed to start tunnel:', error);
@@ -139,8 +159,11 @@ class CameraTunnelService {
   
   async stopTunnel() {
     try {
+      if (!FRPCModule) {
+        throw new Error('FRPC native module not available');
+      }
+      
       await FRPCModule.stopFRPC();
-      await FRPCModule.stopForegroundService();
       
       await StorageService.saveTunnelStatus({
         isActive: false,

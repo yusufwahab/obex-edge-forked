@@ -54,6 +54,26 @@ class FRPCModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
         }
     }
     
+    @ReactMethod
+    fun isFRPCRunning(promise: Promise) {
+        try {
+            val isRunning = (frpcProcess != null && frpcProcess!!.isAlive) || nativePid > 0
+            promise.resolve(isRunning)
+        } catch (e: Exception) {
+            promise.resolve(false)
+        }
+    }
+    
+    @ReactMethod
+    fun installFRPCBinary(promise: Promise) {
+        try {
+            val binaryPath = extractBinary()
+            promise.resolve(binaryPath)
+        } catch (e: Exception) {
+            promise.reject("INSTALL_ERROR", e.message, e)
+        }
+    }
+    
     private fun executeFRPCWithFallback(config: ReadableMap): WritableMap {
         val result = Arguments.createMap()
         

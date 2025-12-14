@@ -52,8 +52,8 @@ const LiveStreamScreen = ({ navigation }) => {
           await loadFrpcCameras();
           await loadTunnelStatus();
         } else {
-          console.log('FRPC Native module not available - app needs rebuild');
-          setTunnelStatus({ isActive: false, error: 'Rebuild required' });
+          console.log('FRPC Native module not available - will try fallback methods');
+          setTunnelStatus({ isActive: false });
         }
       } catch (error) {
         console.error('FRPC initialization error:', error);
@@ -256,7 +256,7 @@ const LiveStreamScreen = ({ navigation }) => {
             <TouchableOpacity
               style={[styles.tunnelButton, tunnelStatus.isActive ? styles.stopTunnelButton : styles.startTunnelButton, tunnelStatus.error && styles.disabledButton]}
               onPress={tunnelStatus.isActive ? handleStopTunnel : handleStartTunnel}
-              disabled={!!(loadingFrpc || tunnelStatus.error)}
+              disabled={loadingFrpc}
             >
               {loadingFrpc ? (
                 <ActivityIndicator size="small" color="#FFF" />
