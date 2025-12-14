@@ -41,7 +41,8 @@ const RTSPPlayer = ({ rtspUrl, style, onError, onLoad, showControls = true }) =>
   
   const handleBuffering = () => {
     console.log('VLC Player: Stream buffering');
-    setLoading(true);
+    // Don't show loading during normal buffering
+    // setLoading(true);
   };
 
   const handleError = (error) => {
@@ -93,7 +94,17 @@ const RTSPPlayer = ({ rtspUrl, style, onError, onLoad, showControls = true }) =>
         {isActive && (
           <VLCPlayer
             ref={vlcRef}
-            source={{ uri: rtspUrl }}
+            source={{ 
+              uri: rtspUrl,
+              initOptions: [
+                '--network-caching=150',
+                '--rtsp-caching=150',
+                '--no-audio',
+                '--intf=dummy',
+                '--extraintf=http',
+                '--rtsp-tcp'
+              ]
+            }}
             autoplay={true}
             style={styles.player}
             onLoadStart={handleLoadStart}
@@ -102,6 +113,12 @@ const RTSPPlayer = ({ rtspUrl, style, onError, onLoad, showControls = true }) =>
             onBuffering={handleBuffering}
             onError={handleError}
             paused={!isActive}
+            bufferConfig={{
+              minBufferMs: 500,
+              maxBufferMs: 2000,
+              bufferForPlaybackMs: 250,
+              bufferForPlaybackAfterRebufferMs: 500
+            }}
           />
         )}
       </View>

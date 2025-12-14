@@ -7,6 +7,8 @@ import java.util.concurrent.Executors
 import android.content.Context
 import android.os.Build
 import android.util.Log
+import java.net.Socket
+import java.net.InetSocketAddress
 
 class FRPCModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
     
@@ -57,10 +59,56 @@ class FRPCModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
     @ReactMethod
     fun isFRPCRunning(promise: Promise) {
         try {
-            val isRunning = (frpcProcess != null && frpcProcess!!.isAlive) || nativePid > 0
+            val javaRunning = frpcProcess != null && frpcProcess!!.isAlive
+            val nativeRunning = nativePid > 0
+            val isRunning = javaRunning || nativeRunning
+            
+            Log.i("FRPC", "Status check - Java: $javaRunning, Native: $nativeRunning")
             promise.resolve(isRunning)
         } catch (e: Exception) {
             promise.resolve(false)
+        }
+    }
+    
+    @ReactMethod
+    fun scanNetwork(promise: Promise) {
+        executor.execute {
+            try {
+                val discoveredDevices = Arguments.createArray()
+                
+                // Scan common IP ranges for RTSP cameras
+                val baseIPs = listOf("192.168.1", "192.168.0", "10.0.0")
+                val commonPorts = listOf(554, 8554, 1935)
+                
+                for (baseIP in baseIPs) {
+                    for (i in 1..254) {
+                        val ip = "$baseIP.$i"
+                        
+                        for (port in commonPorts) {
+                            try {
+                                val socket = java.net.Socket()
+                                socket.connect(java.net.InetSocketAddress(ip, port), 1000)
+                                socket.close()
+                                
+                                val device = Arguments.createMap()
+                                device.putString("ip", ip)
+                                device.putInt("port", port)
+                                device.putString("type", "camera")
+                                discoveredDevices.pushMap(device)
+                                
+                                Log.i("NetworkScan", "Found device at $ip:$port")
+                                break // Found one port, move to next IP
+                            } catch (e: Exception) {
+                                // Port not open, continue
+                            }
+                        }
+                    }
+                }
+                
+                promise.resolve(discoveredDevices)
+            } catch (e: Exception) {
+                promise.reject("SCAN_ERROR", e.message, e)
+            }
         }
     }
     
@@ -71,6 +119,62 @@ class FRPCModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
             promise.resolve(binaryPath)
         } catch (e: Exception) {
             promise.reject("INSTALL_ERROR", e.message, e)
+        }
+    }
+    
+    @ReactMethod
+    fun runComprehensiveDiagnostics(promise: Promise) {
+        try {
+            val result = Arguments.createMap()
+            val issues = Arguments.createArray()
+            val warnings = Arguments.createArray()
+            
+            // Check binary exists
+            val binaryPath = extractBinary()
+            val binaryFile = java.io.File(binaryPath)
+            if (!binaryFile.exists()) {
+                issues.pushString("FRPC binary not found")
+            } else if (!binaryFile.canExecute()) {
+                issues.pushString("FRPC binary not executable")
+            }
+            
+            // Check network connectivity
+            try {
+                val socket = java.net.Socket()
+                socket.connect(java.net.InetSocketAddress("staging.ai.avzdax.com", 7000), 5000)
+                socket.close()
+            } catch (e: Exception) {
+                issues.pushString("Cannot reach FRPC server: ${e.message}")
+            }
+            
+            result.putArray("issues", issues)
+            result.putArray("warnings", warnings)
+            result.putString("status", if (issues.size() == 0) "healthy" else "issues_found")
+            
+            promise.resolve(result)
+        } catch (e: Exception) {
+            promise.reject("DIAGNOSTICS_ERROR", e.message, e)
+        }
+    }
+    
+    @ReactMethod
+    fun testFRPCExecution(promise: Promise) {
+        try {
+            val binaryPath = extractBinary()
+            val testProcess = ProcessBuilder(binaryPath, "--version").start()
+            val exitCode = testProcess.waitFor()
+            
+            val result = Arguments.createMap()
+            result.putInt("exitCode", exitCode)
+            result.putBoolean("success", exitCode == 0)
+            result.putString("message", if (exitCode == 0) "Binary test successful" else "Binary test failed")
+            
+            promise.resolve(result)
+        } catch (e: Exception) {
+            val result = Arguments.createMap()
+            result.putBoolean("success", false)
+            result.putString("message", "Test failed: ${e.message}")
+            promise.resolve(result)
         }
     }
     
@@ -291,15 +395,45 @@ class FRPCModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
         
         // Stop native process
         if (nativePid > 0) {
-            stopped = nativeStopFRPC(nativePid)
-            nativePid = -1
+            try {
+                stopped = nativeStopFRPC(nativePid)
+                nativePid = -1
+                Log.i("FRPC", "Native process stopped: $stopped")
+            } catch (e: Exception) {
+                Log.e("FRPC", "Failed to stop native process: ${e.message}")
+            }
         }
         
-        // Stop Java process
-        frpcProcess?.let {
-            it.destroy()
-            stopped = true
-            frpcProcess = null
+        // Stop Java process with force
+        frpcProcess?.let { process ->
+            try {
+                // Try graceful shutdown first
+                process.destroy()
+                
+                // Wait briefly for graceful shutdown
+                val terminated = process.waitFor(2, java.util.concurrent.TimeUnit.SECONDS)
+                
+                if (!terminated && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    // Force kill if still running
+                    process.destroyForcibly()
+                    Log.i("FRPC", "Process force killed")
+                }
+                
+                stopped = true
+                frpcProcess = null
+                Log.i("FRPC", "Java process stopped")
+            } catch (e: Exception) {
+                Log.e("FRPC", "Failed to stop Java process: ${e.message}")
+            }
+        }
+        
+        // Kill any remaining FRPC processes by name
+        try {
+            val killProcess = ProcessBuilder("pkill", "-f", "frpc").start()
+            killProcess.waitFor(1, java.util.concurrent.TimeUnit.SECONDS)
+            Log.i("FRPC", "Killed remaining FRPC processes")
+        } catch (e: Exception) {
+            Log.w("FRPC", "pkill not available: ${e.message}")
         }
         
         return stopped
