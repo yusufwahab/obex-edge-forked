@@ -112,7 +112,7 @@ android {
         }
         
         ndk {
-            abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86_64'
+            abiFilters 'arm64-v8a'
         }
         
         // Native library configuration
@@ -135,7 +135,6 @@ android {
     externalNativeBuild {
         cmake {
             path "src/main/cpp/CMakeLists.txt"
-            // Let Gradle use available CMake version
         }
     }
     signingConfigs {
@@ -175,8 +174,6 @@ android {
     androidResources {
         ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'
     }
-    
-
 }
 
 // Apply static values from `gradle.properties` to the `android.packagingOptions`

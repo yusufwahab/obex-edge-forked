@@ -2,23 +2,22 @@
 # You can control the set of applied configuration files using the
 # proguardFiles setting in build.gradle.
 
-# Keep FRPC native methods
--keep class com.yusufwahabraotech.obexedge.frpc.FRPCModule {
+# Keep FRPC execution methods
+-keep class com.yusufwahabraotech.obexedge.frpc.** { *; }
+-keepclassmembers class com.yusufwahabraotech.obexedge.frpc.** { *; }
+
+# Keep native methods
+-keepclasseswithmembernames class * {
     native <methods>;
 }
 
-# Keep React Native bridge methods
--keep class com.yusufwahabraotech.obexedge.frpc.FRPCModule {
-    @com.facebook.react.bridge.ReactMethod <methods>;
+# Keep React Native
+-keep,allowobfuscation @interface com.facebook.proguard.annotations.DoNotStrip
+-keep,allowobfuscation @interface com.facebook.proguard.annotations.KeepGettersAndSetters
+-keep,allowobfuscation @interface com.facebook.common.internal.DoNotStrip
+-keep @com.facebook.proguard.annotations.DoNotStrip class *
+-keep @com.facebook.common.internal.DoNotStrip class *
+-keepclassmembers class * {
+    @com.facebook.proguard.annotations.DoNotStrip *;
+    @com.facebook.common.internal.DoNotStrip *;
 }
-
-# Keep service class
--keep class com.yusufwahabraotech.obexedge.frpc.FRPCService
-
-# Prevent obfuscation of binary execution methods
--keep class com.yusufwahabraotech.obexedge.frpc.** { *; }
-
-# Keep Android system classes used for execution
--keep class android.os.** { *; }
--keep class java.lang.ProcessBuilder { *; }
--keep class java.lang.Process { *; }
