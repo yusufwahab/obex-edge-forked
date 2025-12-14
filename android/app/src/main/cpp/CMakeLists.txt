@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10.2)
+cmake_minimum_required(VERSION 3.10.2...3.30)
 project("frpc_wrapper")
 add_library(frpc_wrapper SHARED frpc_wrapper.cpp)
 find_library(log-lib log)

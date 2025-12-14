@@ -21,3 +21,13 @@
     @com.facebook.proguard.annotations.DoNotStrip *;
     @com.facebook.common.internal.DoNotStrip *;
 }
+
+# Keep Expo modules
+-keep class expo.modules.** { *; }
+-keep class com.facebook.react.bridge.** { *; }
+
+# Keep React Native bridge
+-keep class com.facebook.react.** { *; }
+-keepclassmembers class * {
+    @com.facebook.react.bridge.ReactMethod *;
+}

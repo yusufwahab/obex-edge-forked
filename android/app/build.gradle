@@ -106,7 +106,7 @@ android {
         ]
         
         // Android 11+ security configurations
-        if (targetSdkVersion >= 30) {
+        if (rootProject.ext.targetSdkVersion >= 30) {
             manifestPlaceholders['android:extractNativeLibs'] = 'true'
             manifestPlaceholders['android:allowNativeHeapPointerTagging'] = 'false'
         }

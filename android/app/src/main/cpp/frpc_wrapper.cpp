@@ -18,12 +18,21 @@ Java_com_yusufwahabraotech_obexedge_frpc_FRPCModule_nativeExecuteFRPC(
 
     const char *binaryPathStr = env->GetStringUTFChars(binaryPath, 0);
     const char *configPathStr = env->GetStringUTFChars(configPath, 0);
+    
+    if (!binaryPathStr || !configPathStr) {
+        LOGE("Failed to get JNI strings");
+        if (binaryPathStr) env->ReleaseStringUTFChars(binaryPath, binaryPathStr);
+        if (configPathStr) env->ReleaseStringUTFChars(configPath, configPathStr);
+        return -1;
+    }
 
     LOGI("Native FRPC execution: %s with config %s", binaryPathStr, configPathStr);
 
     pid_t pid = fork();
     if (pid == 0) {
-        // Child process
+        // Child process - release JNI strings before execl
+        env->ReleaseStringUTFChars(binaryPath, binaryPathStr);
+        env->ReleaseStringUTFChars(configPath, configPathStr);
         execl(binaryPathStr, "frpc", "-c", configPathStr, (char *)NULL);
         LOGE("execl failed");
         _exit(1);

@@ -151,7 +151,7 @@ class FRPCModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
             val binaryFile = File(cacheDir, "frpc")
             
             if (!binaryFile.exists()) {
-                copyAssetToCacheDir("frpc_arm64/frpc", binaryFile)
+                copyAssetToFile("frpc_arm64/frpc", binaryFile)
             }
             
             binaryFile.setExecutable(true)
@@ -309,14 +309,6 @@ class FRPCModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
     }
     
     private fun copyAssetToFile(assetPath: String, targetFile: File) {
-        context.assets.open(assetPath).use { input ->
-            FileOutputStream(targetFile).use { output ->
-                input.copyTo(output)
-            }
-        }
-    }
-    
-    private fun copyAssetToCacheDir(assetPath: String, targetFile: File) {
         context.assets.open(assetPath).use { input ->
             FileOutputStream(targetFile).use { output ->
                 input.copyTo(output)
