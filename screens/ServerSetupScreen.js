@@ -22,6 +22,7 @@ const ServerSetupScreen = ({ navigation }) => {
 
   useEffect(() => {
     loadExistingConfig();
+    autoSetupServer();
   }, []);
 
   const loadExistingConfig = async () => {
@@ -37,6 +38,23 @@ const ServerSetupScreen = ({ navigation }) => {
       console.error('Failed to load config:', error);
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const autoSetupServer = async () => {
+    try {
+      const existingConfig = await CameraTunnelService.loadFRPSConfig();
+      if (!existingConfig) {
+        console.log('Auto-setting up FRPS server configuration...');
+        await CameraTunnelService.saveFRPSConfig(
+          'staging.ai.avzdax.com',
+          7000,
+          '30PWz5yr0zf7lUALdMauzcxsHs5_3y1BfJdrVJVV8aVAzteNf'
+        );
+        console.log('FRPS server automatically configured');
+      }
+    } catch (error) {
+      console.error('Auto-setup failed:', error);
     }
   };
 
@@ -112,7 +130,7 @@ const ServerSetupScreen = ({ navigation }) => {
       <View style={styles.header}>
         <Text style={styles.title}>FRPS Server Setup</Text>
         <Text style={styles.subtitle}>
-          Configure your FRPS server details to enable remote camera access
+          Server automatically configured for remote camera access
         </Text>
       </View>
 

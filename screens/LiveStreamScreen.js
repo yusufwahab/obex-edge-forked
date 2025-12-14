@@ -198,12 +198,13 @@ const LiveStreamScreen = ({ navigation }) => {
         {/* Stream Controls */}
         <View style={styles.controlsContainer}>
           <View style={styles.urlInputContainer}>
+            <Text style={styles.testHint}>💡 Test your local RTSP by pasting your local or staged rtsp the URL below</Text>
             <Text style={styles.inputLabel}>RTSP URL:</Text>
             <TextInput
               style={styles.urlInput}
               value={rtspUrl}
               onChangeText={setRtspUrl}
-              placeholder="rtsp://username:password@ip:port/stream"
+              placeholder="rtsp://username:password@ipaddress:port/path"
               placeholderTextColor="#666666"
               autoCapitalize="none"
               autoCorrect={false}
@@ -300,9 +301,9 @@ const LiveStreamScreen = ({ navigation }) => {
               <Text style={styles.emptyText}>No remote cameras configured</Text>
               <TouchableOpacity
                 style={styles.setupButton}
-                onPress={() => navigation.navigate('ServerSetup')}
+                onPress={() => navigation.navigate('CameraManagement')}
               >
-                <Text style={styles.setupButtonText}>Setup FRPS Server</Text>
+                <Text style={styles.setupButtonText}>Add Camera</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -430,6 +431,12 @@ const styles = StyleSheet.create({
   },
   urlInputContainer: {
     marginBottom: 16,
+  },
+  testHint: {
+    color: '#4A9EFF',
+    fontSize: 14,
+    marginBottom: 8,
+    fontStyle: 'italic',
   },
   inputLabel: {
     color: '#FFFFFF',

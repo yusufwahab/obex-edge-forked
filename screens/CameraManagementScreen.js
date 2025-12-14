@@ -26,6 +26,10 @@ const CameraManagementScreen = ({ navigation }) => {
   const [localIP, setLocalIP] = useState('192.168.1.10');
   const [localPort, setLocalPort] = useState('554');
   const [remotePort, setRemotePort] = useState('557');
+  const [username, setUsername] = useState('admin');
+  const [password, setPassword] = useState('admin');
+  const [streamPath, setStreamPath] = useState('stream1');
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     loadCameras();
@@ -54,6 +58,9 @@ const CameraManagementScreen = ({ navigation }) => {
     setLocalIP(camera.localIP);
     setLocalPort(camera.localPort.toString());
     setRemotePort(camera.remotePort.toString());
+    setUsername(camera.username || 'admin');
+    setPassword(camera.password || 'admin');
+    setStreamPath(camera.streamPath || 'stream1');
     setShowAddModal(true);
   };
 
@@ -62,7 +69,10 @@ const CameraManagementScreen = ({ navigation }) => {
       name: name.trim(),
       localIP: localIP.trim(),
       localPort: parseInt(localPort),
-      remotePort: parseInt(remotePort)
+      remotePort: 557,
+      username: username.trim(),
+      password: password.trim(),
+      streamPath: streamPath.trim()
     };
 
     const validation = CameraTunnelService.validateCameraConfig(cameraData);
@@ -79,7 +89,10 @@ const CameraManagementScreen = ({ navigation }) => {
           cameraData.name,
           cameraData.localIP,
           cameraData.localPort,
-          cameraData.remotePort
+          cameraData.remotePort,
+          cameraData.username,
+          cameraData.password,
+          cameraData.streamPath
         );
       }
 
@@ -156,6 +169,10 @@ const CameraManagementScreen = ({ navigation }) => {
     setLocalIP('192.168.1.10');
     setLocalPort('554');
     setRemotePort('557');
+    setUsername('admin');
+    setPassword('admin');
+    setStreamPath('stream1');
+    setShowPassword(false);
   };
 
   const renderCameraItem = ({ item }) => (
@@ -308,9 +325,9 @@ const CameraManagementScreen = ({ navigation }) => {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Local IP Address</Text>
                 <TextInput
-                  style={[styles.input, styles.readOnlyInput]}
+                  style={styles.input}
                   value={localIP}
-                  editable={false}
+                  onChangeText={setLocalIP}
                   placeholder="192.168.1.100"
                   placeholderTextColor="#999"
                   keyboardType="numeric"
@@ -320,9 +337,9 @@ const CameraManagementScreen = ({ navigation }) => {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Local Port</Text>
                 <TextInput
-                  style={[styles.input, styles.readOnlyInput]}
+                  style={styles.input}
                   value={localPort}
-                  editable={false}
+                  onChangeText={setLocalPort}
                   placeholder="554"
                   placeholderTextColor="#999"
                   keyboardType="numeric"
@@ -330,15 +347,56 @@ const CameraManagementScreen = ({ navigation }) => {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Remote Port (500-65535)</Text>
+                <Text style={styles.label}>Username</Text>
+                <TextInput
+                  style={styles.input}
+                  value={username}
+                  onChangeText={setUsername}
+                  placeholder="admin"
+                  placeholderTextColor="#999"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Password</Text>
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={[styles.input, styles.passwordInput]}
+                    value={password}
+                    onChangeText={setPassword}
+                    placeholder="admin or 12345"
+                    placeholderTextColor="#999"
+                    secureTextEntry={!showPassword}
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeButton}
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    <Text style={styles.eyeIcon}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Stream Path</Text>
+                <TextInput
+                  style={styles.input}
+                  value={streamPath}
+                  onChangeText={setStreamPath}
+                  placeholder="stream1"
+                  placeholderTextColor="#999"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Remote Port</Text>
                 <TextInput
                   style={[styles.input, styles.readOnlyInput]}
-                  value={remotePort}
+                  value="557"
                   editable={false}
-                  placeholder="500"
                   placeholderTextColor="#999"
-                  keyboardType="numeric"
                 />
+                <Text style={styles.helpText}>Fixed port for FRPC tunnel</Text>
               </View>
             </ScrollView>
 
@@ -524,6 +582,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     padding: 10,
     fontSize: 16,
+    color: '#000',
   },
   modalButtons: {
     flexDirection: 'row',
@@ -579,6 +638,26 @@ const styles = StyleSheet.create({
   readOnlyInput: {
     backgroundColor: '#F0F0F0',
     color: '#666',
+  },
+  helpText: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 4,
+  },
+  passwordContainer: {
+    position: 'relative',
+  },
+  passwordInput: {
+    paddingRight: 45,
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: 10,
+    top: 10,
+    padding: 5,
+  },
+  eyeIcon: {
+    fontSize: 18,
   },
 });
 

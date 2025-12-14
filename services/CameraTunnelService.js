@@ -42,7 +42,7 @@ class CameraTunnelService {
   }
   
   // Camera Management
-  async addCamera(name, localIP, localPort, remotePort) {
+  async addCamera(name, localIP, localPort, remotePort, username = 'admin', password = 'admin', streamPath = 'stream1') {
     const cameras = await StorageService.loadCameras();
     
     // Validate port conflicts
@@ -57,6 +57,9 @@ class CameraTunnelService {
       localIP: localIP.trim(),
       localPort: parseInt(localPort) || 554,
       remotePort: parseInt(remotePort),
+      username: username.trim(),
+      password: password.trim(),
+      streamPath: streamPath.trim(),
       enabled: true
     };
     
@@ -203,7 +206,11 @@ class CameraTunnelService {
           return;
         }
         
-        const streamUrl = `rtsp://${frpsConfig.serverAddr}:${camera.remotePort}`;
+        const username = camera.username || 'admin';
+        const password = camera.password || 'admin';
+        const streamPath = camera.streamPath || 'stream1';
+        
+        const streamUrl = `rtsp://${username}:${password}@${frpsConfig.serverAddr}:${camera.remotePort}/${streamPath}`;
         resolve(streamUrl);
       } catch (error) {
         reject(error);
@@ -312,6 +319,18 @@ class CameraTunnelService {
     
     if (!camera.remotePort || camera.remotePort < 500 || camera.remotePort > 65535) {
       errors.push('Remote port must be between 500-65535');
+    }
+    
+    if (!camera.username || camera.username.trim() === '') {
+      errors.push('Username is required');
+    }
+    
+    if (!camera.password || camera.password.trim() === '') {
+      errors.push('Password is required');
+    }
+    
+    if (!camera.streamPath || camera.streamPath.trim() === '') {
+      errors.push('Stream path is required');
     }
     
     return {
