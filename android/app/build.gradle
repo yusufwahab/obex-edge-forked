@@ -102,12 +102,7 @@ android {
             abiFilters 'arm64-v8a'
         }
         
-        externalNativeBuild {
-            cmake {
-                cppFlags "-std=c++14"
-                arguments "-DANDROID_STL=c++_shared"
-            }
-        }
+
     }
     signingConfigs {
         debug {
@@ -137,20 +132,13 @@ android {
             def enableLegacyPackaging = findProperty('expo.useLegacyPackaging') ?: 'false'
             useLegacyPackaging enableLegacyPackaging.toBoolean()
         }
-        pickFirst '**/libc++_shared.so'
-        pickFirst '**/libjsc.so'
-        pickFirst '**/libfrpc_binary.so'
+
     }
     androidResources {
         ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'
     }
     
-    externalNativeBuild {
-        cmake {
-            path "src/main/cpp/CMakeLists.txt"
-            version "3.18.1"
-        }
-    }
+
 }
 
 // Apply static values from `gradle.properties` to the `android.packagingOptions`
