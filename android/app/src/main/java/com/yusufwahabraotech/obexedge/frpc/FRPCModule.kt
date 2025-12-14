@@ -151,7 +151,24 @@ class FRPCModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
             val binaryPath = extractBinary()
             
             val processBuilder = ProcessBuilder(binaryPath, "-c", configPath)
+            processBuilder.redirectErrorStream(true)
             frpcProcess = processBuilder.start()
+            
+            // Read process output in background
+            Thread {
+                try {
+                    frpcProcess?.inputStream?.bufferedReader()?.useLines { lines ->
+                        lines.forEach { line ->
+                            Log.i("FRPC", "Output: $line")
+                            val params = Arguments.createMap()
+                            params.putString("log", line)
+                            sendEvent("FRPCLog", params)
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("FRPC", "Error reading output: ${e.message}")
+                }
+            }.start()
             
             result.putBoolean("success", true)
             result.putString("message", "Direct binary execution successful")
