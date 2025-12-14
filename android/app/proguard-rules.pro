@@ -11,4 +11,21 @@
 -keep class com.swmansion.reanimated.** { *; }
 -keep class com.facebook.react.turbomodule.** { *; }
 
+# Aggressive size optimization
+-dontwarn **
+-ignorewarnings
+-optimizationpasses 5
+-overloadaggressively
+-allowaccessmodification
+
+# Remove debug info
+-assumenosideeffects class android.util.Log {
+    public static *** d(...);
+    public static *** v(...);
+    public static *** i(...);
+}
+
+# FRPC specific
+-keep class com.yusufwahabraotech.obexedge.frpc.** { *; }
+
 # Add any project specific keep options here:
