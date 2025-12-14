@@ -15,6 +15,7 @@ const RTSPPlayer = ({ rtspUrl, style, onError, onLoad, showControls = true }) =>
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isActive, setIsActive] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
   const vlcRef = useRef(null);
 
   const handleLoadStart = () => {
@@ -27,7 +28,20 @@ const RTSPPlayer = ({ rtspUrl, style, onError, onLoad, showControls = true }) =>
     console.log('VLC Player: Stream loaded successfully:', data);
     setLoading(false);
     setError(null);
+    setIsPlaying(true);
     onLoad && onLoad(data);
+  };
+  
+  const handlePlaying = () => {
+    console.log('VLC Player: Stream is playing');
+    setLoading(false);
+    setError(null);
+    setIsPlaying(true);
+  };
+  
+  const handleBuffering = () => {
+    console.log('VLC Player: Stream buffering');
+    setLoading(true);
   };
 
   const handleError = (error) => {
@@ -84,13 +98,15 @@ const RTSPPlayer = ({ rtspUrl, style, onError, onLoad, showControls = true }) =>
             style={styles.player}
             onLoadStart={handleLoadStart}
             onLoad={handleLoad}
+            onPlaying={handlePlaying}
+            onBuffering={handleBuffering}
             onError={handleError}
             paused={!isActive}
           />
         )}
       </View>
       
-      {loading && (
+      {loading && !isPlaying && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#4A9EFF" />
           <Text style={styles.loadingText}>Connecting...</Text>

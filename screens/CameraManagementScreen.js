@@ -23,9 +23,9 @@ const CameraManagementScreen = ({ navigation }) => {
 
   // Form state
   const [name, setName] = useState('');
-  const [localIP, setLocalIP] = useState('');
+  const [localIP, setLocalIP] = useState('192.168.1.10');
   const [localPort, setLocalPort] = useState('554');
-  const [remotePort, setRemotePort] = useState('');
+  const [remotePort, setRemotePort] = useState('557');
 
   useEffect(() => {
     loadCameras();
@@ -45,8 +45,6 @@ const CameraManagementScreen = ({ navigation }) => {
 
   const handleAddCamera = () => {
     resetForm();
-    const nextPort = CameraTunnelService.getNextAvailablePort(cameras);
-    setRemotePort(nextPort.toString());
     setShowAddModal(true);
   };
 
@@ -155,9 +153,9 @@ const CameraManagementScreen = ({ navigation }) => {
   const resetForm = () => {
     setEditingCamera(null);
     setName('');
-    setLocalIP('');
+    setLocalIP('192.168.1.10');
     setLocalPort('554');
-    setRemotePort('');
+    setRemotePort('557');
   };
 
   const renderCameraItem = ({ item }) => (
@@ -310,9 +308,9 @@ const CameraManagementScreen = ({ navigation }) => {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Local IP Address</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, styles.readOnlyInput]}
                   value={localIP}
-                  onChangeText={setLocalIP}
+                  editable={false}
                   placeholder="192.168.1.100"
                   placeholderTextColor="#999"
                   keyboardType="numeric"
@@ -322,9 +320,9 @@ const CameraManagementScreen = ({ navigation }) => {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Local Port</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, styles.readOnlyInput]}
                   value={localPort}
-                  onChangeText={setLocalPort}
+                  editable={false}
                   placeholder="554"
                   placeholderTextColor="#999"
                   keyboardType="numeric"
@@ -334,9 +332,9 @@ const CameraManagementScreen = ({ navigation }) => {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Remote Port (500-65535)</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, styles.readOnlyInput]}
                   value={remotePort}
-                  onChangeText={setRemotePort}
+                  editable={false}
                   placeholder="500"
                   placeholderTextColor="#999"
                   keyboardType="numeric"
@@ -577,6 +575,10 @@ const styles = StyleSheet.create({
   closeButtonText: {
     color: '#FFF',
     fontWeight: '600',
+  },
+  readOnlyInput: {
+    backgroundColor: '#F0F0F0',
+    color: '#666',
   },
 });
 

@@ -9,20 +9,161 @@ import VideoPlayer from '../components/VideoPlayer';
 import { Video } from 'expo-av';
 import SecurityAlertModal from '../components/SecurityAlertModal';
 import ThreatCard from '../components/ThreatCard';
+import CameraTunnelService from '../services/CameraTunnelService';
+import PermissionService from '../services/PermissionService';
 
 const DashboardScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [showAddCameraModal, setShowAddCameraModal] = useState(false);
   const [showSecurityAlert, setShowSecurityAlert] = useState(false);
   const [showThreatCard, setShowThreatCard] = useState(false);
+  const [frpcLogs, setFrpcLogs] = useState([]);
+  const [showLogs, setShowLogs] = useState(false);
   const scrollViewRef = useRef(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowSecurityAlert(true);
     }, 10000);
-    return () => clearTimeout(timer);
+    
+    // Auto-start tunneling on app launch
+    initializeAndStartTunnel();
+    
+    // Setup FRPC log listener
+    const logUnsubscribe = CameraTunnelService.onFRPCLog((log) => {
+      console.log('FRPC Log:', log);
+      setFrpcLogs(prev => {
+        const newLogs = [...prev, { timestamp: new Date().toLocaleTimeString(), message: log }];
+        return newLogs.slice(-50); // Keep last 50 logs
+      });
+    });
+    
+    return () => {
+      clearTimeout(timer);
+      logUnsubscribe && logUnsubscribe();
+    };
   }, []);
+  
+  const initializeAndStartTunnel = async () => {
+    try {
+      console.log('🚀 Initializing FRPC tunnel...');
+      
+      // Request permissions first
+      console.log('🔐 Requesting permissions...');
+      const permissionsGranted = await PermissionService.requestAllPermissions();
+      if (!permissionsGranted) {
+        console.warn('⚠️ Some permissions denied, continuing with limited functionality');
+      }
+      
+      // Install FRPC binary first
+      console.log('💾 Installing FRPC binary...');
+      try {
+        const { NativeModules } = require('react-native');
+        if (NativeModules.FRPCModule && NativeModules.FRPCModule.installFRPCBinary) {
+          const binaryPath = await NativeModules.FRPCModule.installFRPCBinary();
+          console.log('✅ FRPC binary installed at:', binaryPath);
+        }
+      } catch (installError) {
+        console.error('❌ FRPC binary installation failed:', installError.message);
+        throw new Error('Binary installation failed: ' + installError.message);
+      }
+      
+      // Save default FRPS config if not exists
+      const existingConfig = await CameraTunnelService.loadFRPSConfig();
+      if (!existingConfig) {
+        console.log('📝 Creating default FRPS config...');
+        await CameraTunnelService.saveFRPSConfig(
+          'staging.ai.avzdax.com',
+          7000,
+          '30PWz5yr0zf7lUALdMauzcxsHs5_3y1BfJdrVJVV8aVAzteNf'
+        );
+        console.log('✅ Default FRPS config created');
+      } else {
+        console.log('✅ FRPS config already exists');
+      }
+      
+      // Add default camera if no cameras exist
+      const existingCameras = await CameraTunnelService.getCameras();
+      if (existingCameras.length === 0) {
+        console.log('📷 Creating default camera...');
+        await CameraTunnelService.addCamera(
+          'Default Camera',
+          '192.168.1.10',
+          554,
+          557
+        );
+        console.log('✅ Default camera created');
+      } else {
+        console.log(`✅ Found ${existingCameras.length} existing cameras`);
+      }
+      
+      // Run diagnostics first
+      console.log('🔍 Running FRPC diagnostics...');
+      try {
+        const { NativeModules } = require('react-native');
+        if (NativeModules.FRPCModule && NativeModules.FRPCModule.runComprehensiveDiagnostics) {
+          const diagnostics = await NativeModules.FRPCModule.runComprehensiveDiagnostics();
+          console.log('📊 FRPC Diagnostics:', diagnostics);
+          
+          if (diagnostics.issues && diagnostics.issues.length > 0) {
+            console.warn('⚠️ FRPC Issues found:', diagnostics.issues);
+          }
+          if (diagnostics.warnings && diagnostics.warnings.length > 0) {
+            console.warn('⚠️ FRPC Warnings:', diagnostics.warnings);
+          }
+        }
+      } catch (diagError) {
+        console.error('❌ Diagnostics failed:', diagError.message);
+      }
+      
+      // Test binary execution
+      console.log('🧪 Testing FRPC binary execution...');
+      try {
+        const { NativeModules } = require('react-native');
+        if (NativeModules.FRPCModule && NativeModules.FRPCModule.testFRPCExecution) {
+          const testResult = await NativeModules.FRPCModule.testFRPCExecution();
+          console.log('🧪 Binary test result:', testResult);
+        }
+      } catch (testError) {
+        console.error('❌ Binary test failed:', testError.message);
+      }
+      
+      // Start tunnel automatically
+      console.log('🔄 Starting FRPC tunnel...');
+      const result = await CameraTunnelService.setupAndStart();
+      console.log('🎯 Auto-start tunnel result:', result);
+      
+      if (result.success) {
+        console.log('🎉 FRPC tunnel started successfully!');
+      } else {
+        console.error('❌ FRPC tunnel failed to start:', result.message);
+        
+        // Additional debugging for binary issues
+        try {
+          const { NativeModules } = require('react-native');
+          if (NativeModules.FRPCModule && NativeModules.FRPCModule.checkBinaryPermissions) {
+            const permissions = await NativeModules.FRPCModule.checkBinaryPermissions();
+            console.log('🔐 Binary permissions:', permissions);
+          }
+        } catch (permError) {
+          console.error('❌ Permission check failed:', permError.message);
+        }
+        
+        // Show user-friendly message
+        console.log('📝 Note: FRPC auto-start failed. This is common in development builds.');
+        console.log('📝 Try using a preview or production build for full FRPC functionality.');
+        console.log('📝 You can still test manually from the Live Stream screen.');
+      }
+      
+    } catch (error) {
+      console.error('💥 Failed to auto-start tunnel:', error);
+      console.error('Error details:', error.message);
+      
+      // Don't crash the app, just log the error
+      console.log('📝 App will continue without FRPC auto-start');
+      console.log('📝 Manual tunnel control available in Live Stream screen');
+    }
+  };
 
   const handleCloseSecurityAlert = () => {
     setShowSecurityAlert(false);
@@ -286,6 +427,45 @@ const DashboardScreen = ({ navigation }) => {
               <Text style={styles.addCameraText}>Add New Camera</Text>
             </TouchableOpacity>
           </View>
+        </View>
+
+        {/* FRPC Logs Section */}
+        <View style={styles.section}>
+          <TouchableOpacity 
+            style={styles.logsHeader}
+            onPress={() => setShowLogs(!showLogs)}
+          >
+            <Text style={styles.sectionTitle}>FRPC Logs ({frpcLogs.length})</Text>
+            <Ionicons 
+              name={showLogs ? 'chevron-up' : 'chevron-down'} 
+              size={20} 
+              color="#FFFFFF" 
+            />
+          </TouchableOpacity>
+          
+          {showLogs && (
+            <View style={styles.logsContainer}>
+              {frpcLogs.length > 0 ? (
+                <ScrollView 
+                  style={styles.logsList}
+                  nestedScrollEnabled={true}
+                  showsVerticalScrollIndicator={true}
+                >
+                  {frpcLogs.map((log, index) => (
+                    <View key={index} style={styles.logItem}>
+                      <Text style={styles.logTimestamp}>{log.timestamp}</Text>
+                      <Text style={styles.logMessage}>{log.message}</Text>
+                    </View>
+                  ))}
+                </ScrollView>
+              ) : (
+                <View style={styles.noLogsContainer}>
+                  <Text style={styles.noLogsText}>No FRPC logs yet</Text>
+                  <Text style={styles.noLogsSubtext}>Logs will appear when tunnel is active</Text>
+                </View>
+              )}
+            </View>
+          )}
         </View>
 
         {/* Threat Card - appears below camera section when modal is closed */}
@@ -730,6 +910,61 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flex: 1,
     marginLeft: 12,
+  },
+  
+  // FRPC Logs Styles
+  logsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(64,64,64,0.7)',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 0.5,
+    borderColor: '#555555',
+  },
+  logsContainer: {
+    backgroundColor: 'rgba(32,32,32,0.9)',
+    borderRadius: 8,
+    marginTop: 8,
+    maxHeight: 200,
+  },
+  logsList: {
+    maxHeight: 180,
+    padding: 12,
+  },
+  logItem: {
+    flexDirection: 'row',
+    marginBottom: 8,
+    paddingBottom: 8,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#333',
+  },
+  logTimestamp: {
+    color: '#4A9EFF',
+    fontSize: 12,
+    fontFamily: 'monospace',
+    width: 80,
+    marginRight: 8,
+  },
+  logMessage: {
+    color: '#CCCCCC',
+    fontSize: 12,
+    fontFamily: 'monospace',
+    flex: 1,
+  },
+  noLogsContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  noLogsText: {
+    color: '#666',
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  noLogsSubtext: {
+    color: '#555',
+    fontSize: 12,
   },
 });
 

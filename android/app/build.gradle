@@ -98,11 +98,45 @@ android {
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
         
-        ndk {
-            abiFilters 'arm64-v8a'
+        // Allow binary execution and Android 11+ compatibility
+        manifestPlaceholders = [
+            'allowBackup': 'true',
+            'requestLegacyExternalStorage': 'true',
+            'preserveLegacyExternalStorage': 'true'
+        ]
+        
+        // Android 11+ security configurations
+        if (targetSdkVersion >= 30) {
+            manifestPlaceholders['android:extractNativeLibs'] = 'true'
+            manifestPlaceholders['android:allowNativeHeapPointerTagging'] = 'false'
         }
         
-
+        ndk {
+            abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86_64'
+        }
+        
+        // Native library configuration
+        sourceSets {
+            main {
+                jniLibs.srcDirs = ['src/main/jniLibs']
+            }
+        }
+        
+        // CMake configuration for JNI wrapper (fallback method)
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++17"
+                arguments "-DANDROID_STL=c++_shared"
+            }
+        }
+    }
+    
+    // CMake build configuration
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            // Let Gradle use available CMake version
+        }
     }
     signingConfigs {
         debug {
@@ -132,7 +166,11 @@ android {
             def enableLegacyPackaging = findProperty('expo.useLegacyPackaging') ?: 'false'
             useLegacyPackaging enableLegacyPackaging.toBoolean()
         }
-
+        
+        // Prevent STL conflicts
+        pickFirst 'lib/arm64-v8a/libc++_shared.so'
+        pickFirst 'lib/armeabi-v7a/libc++_shared.so'
+        pickFirst 'lib/x86_64/libc++_shared.so'
     }
     androidResources {
         ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'

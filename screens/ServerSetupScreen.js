@@ -9,12 +9,14 @@ import {
   ScrollView,
   ActivityIndicator
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import CameraTunnelService from '../services/CameraTunnelService';
 
 const ServerSetupScreen = ({ navigation }) => {
-  const [serverAddr, setServerAddr] = useState('');
+  const [serverAddr, setServerAddr] = useState('staging.ai.avzdax.com');
   const [serverPort, setServerPort] = useState('7000');
-  const [token, setToken] = useState('');
+  const [token, setToken] = useState('30PWz5yr0zf7lUALdMauzcxsHs5_3y1BfJdrVJVV8aVAzteNf');
+  const [showToken, setShowToken] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -118,9 +120,9 @@ const ServerSetupScreen = ({ navigation }) => {
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Server Address</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, styles.readOnlyInput]}
             value={serverAddr}
-            onChangeText={setServerAddr}
+            editable={false}
             placeholder="my-server.com or 192.168.1.100"
             placeholderTextColor="#999"
             autoCapitalize="none"
@@ -134,9 +136,9 @@ const ServerSetupScreen = ({ navigation }) => {
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Server Port</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, styles.readOnlyInput]}
             value={serverPort}
-            onChangeText={setServerPort}
+            editable={false}
             placeholder="7000"
             placeholderTextColor="#999"
             keyboardType="numeric"
@@ -148,16 +150,28 @@ const ServerSetupScreen = ({ navigation }) => {
 
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Authentication Token</Text>
-          <TextInput
-            style={styles.input}
-            value={token}
-            onChangeText={setToken}
-            placeholder="your_secure_token_123"
-            placeholderTextColor="#999"
-            secureTextEntry={true}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
+          <View style={styles.tokenInputContainer}>
+            <TextInput
+              style={[styles.tokenInput, styles.readOnlyInput]}
+              value={token}
+              editable={false}
+              placeholder="your_secure_token_123"
+              placeholderTextColor="#666"
+              secureTextEntry={!showToken}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <TouchableOpacity
+              style={styles.eyeButton}
+              onPress={() => setShowToken(!showToken)}
+            >
+              <Ionicons
+                name={showToken ? 'eye-off' : 'eye'}
+                size={20}
+                color="#FFF"
+              />
+            </TouchableOpacity>
+          </View>
           <Text style={styles.hint}>
             Secure token for FRPS authentication
           </Text>
@@ -253,6 +267,30 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     backgroundColor: '#FAFAFA',
+  },
+  tokenInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#000',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  tokenInput: {
+    flex: 1,
+    padding: 12,
+    fontSize: 16,
+    color: '#FFF',
+    backgroundColor: 'transparent',
+  },
+  eyeButton: {
+    padding: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  readOnlyInput: {
+    backgroundColor: '#F0F0F0',
+    color: '#666',
   },
   hint: {
     fontSize: 14,

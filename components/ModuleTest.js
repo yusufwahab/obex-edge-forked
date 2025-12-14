@@ -14,8 +14,28 @@ const ModuleTest = () => {
       console.log('FRPC Module exists:', hasFRPC);
       
       if (hasFRPC) {
-        setModuleStatus('✅ FRPC Module Available');
-        console.log('FRPC Methods:', Object.keys(NativeModules.FRPCModule));
+        const frpcMethods = Object.keys(NativeModules.FRPCModule);
+        setModuleStatus(`✅ FRPC Module Available (${frpcMethods.length} methods)`);
+        console.log('FRPC Methods:', frpcMethods);
+        
+        // Check for required methods
+        const requiredMethods = [
+          'installFRPCBinary',
+          'generateConfig', 
+          'startFRPC',
+          'stopFRPC',
+          'isFRPCRunning',
+          'checkBinaryPermissions',
+          'runComprehensiveDiagnostics',
+          'testFRPCExecution'
+        ];
+        
+        const missingMethods = requiredMethods.filter(method => !frpcMethods.includes(method));
+        if (missingMethods.length > 0) {
+          console.warn('Missing FRPC methods:', missingMethods);
+        } else {
+          console.log('✅ All required FRPC methods available');
+        }
       } else {
         setModuleStatus('❌ FRPC Module Missing');
         console.log('Available modules:', allModules.slice(0, 10));
