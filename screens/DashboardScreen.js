@@ -25,6 +25,9 @@ const DashboardScreen = ({ navigation }) => {
     // Auto-start tunneling on app launch
     initializeAndStartTunnel();
     
+    // Load cameras from storage
+    loadCamerasFromStorage();
+    
     // Setup FRPC log listener
     const logUnsubscribe = CameraTunnelService.onFRPCLog((log) => {
       console.log('FRPC Log:', log);
@@ -173,32 +176,66 @@ const DashboardScreen = ({ navigation }) => {
     setShowThreatCard(false);
     setShowSecurityAlert(true);
   };
-  const [cameras, setCameras] = useState([
-    {
-      id: 1,
-      name: 'Front-door Camera',
-      location: 'Main Entrance',
-      rtspUrl: null,
-      isOnline: true
-    },
-    {
-      id: 2,
-      name: 'John Vehicle Cam',
-      location: 'Garden Area',
-      rtspUrl: null,
-      isOnline: true,
-      hasWeaponDetection: true
-    },
-    {
-      id: 3,
-      name: 'Security Alert Camera',
-      location: 'Weapon Detection Zone',
-      rtspUrl: null,
-      isOnline: true,
-      hasWeaponDetection: true,
-      isAlert: true
+  const [cameras, setCameras] = useState([]);
+  // Commented out existing cameras
+  // const [cameras, setCameras] = useState([
+  //   {
+  //     id: 1,
+  //     name: 'Front-door Camera',
+  //     location: 'Main Entrance',
+  //     rtspUrl: null,
+  //     isOnline: true
+  //   },
+  //   {
+  //     id: 2,
+  //     name: 'John Vehicle Cam',
+  //     location: 'Garden Area',
+  //     rtspUrl: null,
+  //     isOnline: true,
+  //     hasWeaponDetection: true
+  //   },
+  //   {
+  //     id: 3,
+  //     name: 'Security Alert Camera',
+  //     location: 'Weapon Detection Zone',
+  //     rtspUrl: null,
+  //     isOnline: true,
+  //     hasWeaponDetection: true,
+  //     isAlert: true
+  //   }
+  // ]);
+
+  const loadCamerasFromStorage = async () => {
+    try {
+      const storedCameras = await CameraTunnelService.getCameras();
+      const formattedCameras = storedCameras.map(cam => ({
+        id: cam.id,
+        name: cam.name,
+        location: 'Camera Location',
+        rtspUrl: `rtsp://${cam.username}:${cam.password}@${cam.localIP}:${cam.localPort}/${cam.streamPath}`,
+        isOnline: true,
+        isPlaying: false
+      }));
+      setCameras(formattedCameras);
+    } catch (error) {
+      console.error('Failed to load cameras:', error);
     }
-  ]);
+  };
+  
+  const handlePlayCamera = (cameraId) => {
+    setCameras(prev => prev.map(cam => 
+      cam.id === cameraId ? { ...cam, isPlaying: !cam.isPlaying } : cam
+    ));
+  };
+  
+  const handleDeleteCamera = async (cameraId) => {
+    try {
+      await CameraTunnelService.removeCamera(cameraId);
+      loadCamerasFromStorage(); // Reload cameras after deletion
+    } catch (error) {
+      console.error('Failed to delete camera:', error);
+    }
+  };
 
   const handleAddCamera = (cameraData) => {
     const newCamera = {
@@ -227,21 +264,21 @@ const DashboardScreen = ({ navigation }) => {
                 style={[styles.alertButton, styles.weaponAlertButton]}
                 onPress={() => setShowSecurityAlert(true)}
               >
-                <Ionicons name="warning" size={12} color="#FFFFFF" />
+                <Ionicons name="warning" size={12} color="#333333" />
               </TouchableOpacity>
               
               <TouchableOpacity 
                 style={[styles.alertButton, styles.intruderAlertButton]}
                 onPress={() => setShowSecurityAlert(true)}
               >
-                <Ionicons name="person" size={12} color="#FFFFFF" />
+                <Ionicons name="person" size={12} color="#333333" />
               </TouchableOpacity>
               
               <TouchableOpacity 
                 style={[styles.alertButton, styles.motionAlertButton]}
                 onPress={() => setShowSecurityAlert(true)}
               >
-                <Ionicons name="walk" size={12} color="#FFFFFF" />
+                <Ionicons name="walk" size={12} color="#333333" />
               </TouchableOpacity>
             </View>
             <TouchableOpacity style={styles.notificationButton} onPress={() => navigation.navigate('Notifications')}>
@@ -345,106 +382,124 @@ const DashboardScreen = ({ navigation }) => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>My Cameras ({cameras.length})</Text>
-            <TouchableOpacity 
-              style={styles.addButton}
-              onPress={() => setShowAddCameraModal(true)}
-            >
-              <Ionicons name="add" size={16} color="#4A9EFF" style={styles.addIcon} />
-              <Text style={styles.addButtonText}>Add</Text>
-            </TouchableOpacity>
+            <View style={styles.sectionRight}>
+              <View style={styles.alertButtonsContainer}>
+                <TouchableOpacity 
+                  style={[styles.alertButton, styles.weaponAlertButton]}
+                  onPress={() => setShowSecurityAlert(true)}
+                >
+                  <Ionicons name="warning" size={12} color="#333333" />
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.alertButton, styles.intruderAlertButton]}
+                  onPress={() => setShowSecurityAlert(true)}
+                >
+                  <Ionicons name="person" size={12} color="#333333" />
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.alertButton, styles.motionAlertButton]}
+                  onPress={() => setShowSecurityAlert(true)}
+                >
+                  <Ionicons name="walk" size={12} color="#333333" />
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity 
+                style={styles.addButton}
+                onPress={() => setShowAddCameraModal(true)}
+              >
+                <Ionicons name="add" size={16} color="#4A9EFF" style={styles.addIcon} />
+                <Text style={styles.addButtonText}>Add</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Camera Grid */}
           <View style={styles.cameraGrid}>
-            {cameras.map((camera) => (
-              <View key={camera.id} style={styles.cameraCard}>
-                <LinearGradient
-                  colors={['#333333', '#2A3A4A']}
-                  style={styles.cameraFullContainer}
-                >
-                  <View style={styles.cameraHeader}>
-                    <View style={[styles.onlineBadge, !camera.isOnline && styles.offlineBadge]}>
-                      <View style={camera.isOnline ? styles.onlineDot : styles.offlineDot} />
-                      <Text style={camera.isOnline ? styles.onlineText : styles.offlineText}>
-                        {camera.isOnline ? 'Online' : 'Offline'}
-                      </Text>
+            {cameras.length > 0 ? (
+              <>
+                {cameras.map((camera) => (
+                  <View key={camera.id} style={styles.cameraCard}>
+                    <LinearGradient
+                      colors={['#333333', '#2A3A4A']}
+                      style={styles.cameraFullContainer}
+                    >
+                      <View style={styles.cameraHeader}>
+                        <View style={[styles.onlineBadge, !camera.isOnline && styles.offlineBadge]}>
+                          <View style={camera.isOnline ? styles.onlineDot : styles.offlineDot} />
+                          <Text style={camera.isOnline ? styles.onlineText : styles.offlineText}>
+                            {camera.isOnline ? 'Online' : 'Offline'}
+                          </Text>
+                        </View>
+                        <TouchableOpacity 
+                          style={styles.deleteButton}
+                          onPress={() => handleDeleteCamera(camera.id)}
+                        >
+                          <Ionicons name="trash" size={16} color="#FF4444" />
+                        </TouchableOpacity>
+                      </View>
+                      <View style={styles.cameraIconArea}>
+                        {camera.isPlaying ? (
+                          <RTSPPlayer
+                            rtspUrl={camera.rtspUrl}
+                            style={styles.videoPlayer}
+                            onError={() => handlePlayCamera(camera.id)}
+                          />
+                        ) : (
+                          <>
+                            <Ionicons name="videocam" size={48} color="#666666" />
+                            <TouchableOpacity 
+                              style={styles.playOverlay}
+                              onPress={() => handlePlayCamera(camera.id)}
+                            >
+                              <Ionicons name="play" size={16} color="#FFFFFF" />
+                            </TouchableOpacity>
+                          </>
+                        )}
+                      </View>
+                    </LinearGradient>
+                    <View style={styles.cameraInfo}>
+                      <Text style={styles.cameraName}>{camera.name}</Text>
+                      <View style={styles.locationRow}>
+                        <Ionicons name="location" size={14} color="#CCCCCC" />
+                        <Text style={styles.cameraLocation}>{camera.location}</Text>
+                      </View>
+                      <View style={styles.statusRow}>
+                        <Ionicons name="time" size={14} color="#CCCCCC" />
+                        <Text style={styles.cameraStatus}>
+                          {camera.isOnline ? 'Active • Live Stream' : 'Inactive • Offline'}
+                        </Text>
+                      </View>
                     </View>
                   </View>
-                  <View style={styles.cameraIconArea}>
-                    {camera.id === 1 ? (
-                      <>
-                        <VideoPlayer style={styles.videoPlayer} />
-                        <View style={styles.liveIndicator}>
-                          <View style={styles.liveDot} />
-                          <Text style={styles.liveText}>LIVE</Text>
-                        </View>
-                      </>
-                    ) : camera.id === 2 ? (
-                      <>
-                        <VideoPlayer style={styles.videoPlayer} weaponDetection={true} />
-                        <View style={styles.liveIndicator}>
-                          <View style={styles.liveDot} />
-                          <Text style={styles.liveText}>LIVE</Text>
-                        </View>
-                      </>
-                    ) : camera.id === 3 ? (
-                      <TouchableOpacity 
-                        style={styles.cameraIconArea}
-                        onPress={() => navigation.navigate('History', { weaponDetection: true })}
-                      >
-                        <VideoPlayer style={styles.videoPlayer} weaponDetection={true} />
-                        <View style={[styles.liveIndicator, styles.alertIndicator]}>
-                          <Ionicons name="warning" size={12} color="#FFFFFF" />
-                          <Text style={styles.liveText}>ALERT</Text>
-                        </View>
-                      </TouchableOpacity>
-                    ) : camera.rtspUrl ? (
-                      <>
-                        <View style={styles.videoStream}>
-                          <Text style={styles.streamingText}>RTSP Stream Ready</Text>
-                          <Text style={styles.urlText}>{camera.rtspUrl}</Text>
-                        </View>
-                        <View style={styles.liveIndicator}>
-                          <View style={styles.liveDot} />
-                          <Text style={styles.liveText}>READY</Text>
-                        </View>
-                      </>
-                    ) : (
-                      <>
-                        <Ionicons name="videocam" size={48} color="#666666" />
-                        <View style={styles.playOverlay}>
-                          <Ionicons name="play" size={16} color="#FFFFFF" />
-                        </View>
-                      </>
-                    )}
+                ))}
+                
+                {/* Add Camera Card */}
+                <TouchableOpacity 
+                  style={[styles.cameraCard, styles.addCameraCard]}
+                  onPress={() => setShowAddCameraModal(true)}
+                >
+                  <View style={styles.addCameraIcon}>
+                    <Ionicons name="add" size={48} color="#4A9EFF" />
                   </View>
-                </LinearGradient>
-                <View style={styles.cameraInfo}>
-                  <Text style={styles.cameraName}>{camera.name}</Text>
-                  <View style={styles.locationRow}>
-                    <Ionicons name="location" size={14} color="#CCCCCC" />
-                    <Text style={styles.cameraLocation}>{camera.location}</Text>
-                  </View>
-                  <View style={styles.statusRow}>
-                    <Ionicons name="time" size={14} color="#CCCCCC" />
-                    <Text style={styles.cameraStatus}>
-                      {camera.isOnline ? 'Active 2h • 12 Events Today' : 'Inactive • Last seen 1h ago'}
-                    </Text>
-                  </View>
-                </View>
+                  <Text style={styles.addCameraText}>Add New Camera</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <View style={styles.emptyCameraState}>
+                <Ionicons name="videocam-outline" size={64} color="#666666" />
+                <Text style={styles.emptyCameraTitle}>No Cameras Added</Text>
+                <Text style={styles.emptyCameraSubtitle}>Add your first camera to start monitoring</Text>
+                <TouchableOpacity 
+                  style={styles.addFirstCameraButton}
+                  onPress={() => setShowAddCameraModal(true)}
+                >
+                  <Ionicons name="add" size={20} color="#FFFFFF" />
+                  <Text style={styles.addFirstCameraText}>Add First Camera</Text>
+                </TouchableOpacity>
               </View>
-            ))}
-
-            {/* Add Camera Card */}
-            <TouchableOpacity 
-              style={[styles.cameraCard, styles.addCameraCard]}
-              onPress={() => setShowAddCameraModal(true)}
-            >
-              <View style={styles.addCameraIcon}>
-                <Ionicons name="add" size={48} color="#4A9EFF" />
-              </View>
-              <Text style={styles.addCameraText}>Add New Camera</Text>
-            </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -697,6 +752,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
+  sectionRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   sectionTitle: {
     fontSize: 18,
     color: '#FFFFFF',
@@ -734,7 +794,8 @@ const styles = StyleSheet.create({
   },
   cameraHeader: {
     flexDirection: 'row',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 12,
   },
   cameraIconArea: {
@@ -831,6 +892,44 @@ const styles = StyleSheet.create({
     color: '#4A9EFF',
     fontSize: 16,
     fontWeight: '500',
+  },
+  emptyCameraState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 20,
+  },
+  emptyCameraTitle: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '600',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyCameraSubtitle: {
+    color: '#8B92A7',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  addFirstCameraButton: {
+    backgroundColor: '#4A9EFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  addFirstCameraText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  deleteButton: {
+    backgroundColor: 'rgba(255, 68, 68, 0.2)',
+    borderRadius: 16,
+    padding: 6,
   },
   bottomNav: {
     position: 'absolute',

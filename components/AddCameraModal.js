@@ -4,35 +4,203 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const AddCameraModal = ({ visible, onClose, onComplete }) => {
+  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     name: '',
-    rtspUrl: ''
+    localIP: '192.168.1.10',
+    localPort: '554',
+    username: 'admin',
+    password: 'admin',
+    streamPath: 'stream1',
+    remotePort: '557'
   });
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleComplete = () => {
-    if (!formData.name.trim()) {
-      Alert.alert('Error', 'Please enter a camera name');
-      return;
+  const totalSteps = 3;
+  
+  const validateCurrentStep = () => {
+    switch (currentStep) {
+      case 1:
+        return formData.name.trim() !== '';
+      case 2:
+        return formData.localIP.trim() !== '' && formData.localPort.trim() !== '';
+      case 3:
+        return formData.username.trim() !== '' && formData.password.trim() !== '' && formData.streamPath.trim() !== '';
+      default:
+        return false;
     }
-    if (!formData.rtspUrl.trim()) {
-      Alert.alert('Error', 'Please enter an RTSP URL');
-      return;
+  };
+  
+  const handleNext = () => {
+    if (validateCurrentStep()) {
+      if (currentStep < totalSteps) {
+        setCurrentStep(currentStep + 1);
+      } else {
+        handleComplete();
+      }
     }
-    if (!formData.rtspUrl.startsWith('rtsp://')) {
-      Alert.alert('Error', 'RTSP URL must start with rtsp://');
-      return;
+  };
+  
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
     }
-    
-    onComplete(formData);
-    handleClose();
+  };
+
+  const handleComplete = async () => {
+    try {
+      const CameraTunnelService = require('../services/CameraTunnelService').default;
+      await CameraTunnelService.addCamera(
+        formData.name,
+        formData.localIP,
+        parseInt(formData.localPort),
+        parseInt(formData.remotePort),
+        formData.username,
+        formData.password,
+        formData.streamPath
+      );
+      
+      onComplete && onComplete(formData);
+      handleClose();
+    } catch (error) {
+      Alert.alert('Error', error.message || 'Failed to add camera');
+    }
   };
 
   const handleClose = () => {
+    setCurrentStep(1);
     setFormData({
       name: '',
-      rtspUrl: ''
+      localIP: '192.168.1.10',
+      localPort: '554',
+      username: 'admin',
+      password: 'admin',
+      streamPath: 'stream1',
+      remotePort: '557'
     });
+    setShowPassword(false);
     onClose();
+  };
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <>
+            <Text style={styles.stepTitle}>Camera Details</Text>
+            <Text style={styles.stepSubtitle}>Enter basic camera information</Text>
+            
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Camera Name</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g., Front Door Camera"
+                placeholderTextColor="#8B92A7"
+                value={formData.name}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
+                autoFocus={true}
+              />
+            </View>
+          </>
+        );
+      
+      case 2:
+        return (
+          <>
+            <Text style={styles.stepTitle}>Network Settings</Text>
+            <Text style={styles.stepSubtitle}>Configure camera network details</Text>
+            
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Local IP Address</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="192.168.1.10"
+                placeholderTextColor="#8B92A7"
+                value={formData.localIP}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, localIP: text }))}
+              />
+            </View>
+            
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Local Port</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="554"
+                placeholderTextColor="#8B92A7"
+                value={formData.localPort}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, localPort: text }))}
+                keyboardType="numeric"
+              />
+            </View>
+            
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Remote Port</Text>
+              <TextInput
+                style={[styles.input, styles.readOnlyInput]}
+                value="557"
+                editable={false}
+              />
+              <Text style={styles.helpText}>Fixed port for FRPC tunnel</Text>
+            </View>
+          </>
+        );
+      
+      case 3:
+        return (
+          <>
+            <Text style={styles.stepTitle}>Authentication</Text>
+            <Text style={styles.stepSubtitle}>Enter camera login credentials</Text>
+            
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Username</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="admin"
+                placeholderTextColor="#8B92A7"
+                value={formData.username}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, username: text }))}
+                autoCapitalize="none"
+              />
+            </View>
+            
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Password</Text>
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  style={[styles.input, styles.passwordInput]}
+                  placeholder="admin or 12345"
+                  placeholderTextColor="#8B92A7"
+                  value={formData.password}
+                  onChangeText={(text) => setFormData(prev => ({ ...prev, password: text }))}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity
+                  style={styles.eyeButton}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <Text style={styles.eyeIcon}>{showPassword ? '👁️' : '👁️🗨️'}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Stream Path</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="stream1"
+                placeholderTextColor="#8B92A7"
+                value={formData.streamPath}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, streamPath: text }))}
+                autoCapitalize="none"
+              />
+            </View>
+          </>
+        );
+      
+      default:
+        return null;
+    }
   };
 
   return (
@@ -60,6 +228,24 @@ const AddCameraModal = ({ visible, onClose, onComplete }) => {
             <View style={styles.placeholder} />
           </View>
 
+          {/* Progress Indicator */}
+          <View style={styles.progressContainer}>
+            {[1, 2, 3].map((step) => (
+              <View key={step} style={styles.progressStep}>
+                <View style={[
+                  styles.progressDot,
+                  currentStep >= step && styles.progressDotActive
+                ]} />
+                {step < totalSteps && (
+                  <View style={[
+                    styles.progressLine,
+                    currentStep > step && styles.progressLineActive
+                  ]} />
+                )}
+              </View>
+            ))}
+          </View>
+
           {/* Content */}
           <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
             <View style={styles.content}>
@@ -69,57 +255,40 @@ const AddCameraModal = ({ visible, onClose, onComplete }) => {
                 </View>
               </View>
 
-              <Text style={styles.stepTitle}>Add New Camera</Text>
-              <Text style={styles.stepSubtitle}>Enter camera details to start streaming</Text>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Camera Name</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g., Front Door Camera"
-                  placeholderTextColor="#8B92A7"
-                  value={formData.name}
-                  onChangeText={(text) => setFormData(prev => ({
-                    ...prev,
-                    name: text
-                  }))}
-                  autoFocus={true}
-                />
+              {renderStepContent()}
+              
+              {/* RTSP Preview */}
+              <View style={styles.previewContainer}>
+                <Text style={styles.previewLabel}>RTSP URL Preview:</Text>
+                <Text style={styles.previewUrl}>
+                  {`rtsp://${formData.username}:${formData.password}@${formData.localIP}:${formData.localPort}/${formData.streamPath}`}
+                </Text>
               </View>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>RTSP URL</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="rtsp://admin:password@192.168.1.10:554/stream1"
-                  placeholderTextColor="#8B92A7"
-                  value={formData.rtspUrl}
-                  onChangeText={(text) => setFormData(prev => ({
-                    ...prev,
-                    rtspUrl: text
-                  }))}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
-
-              <Text style={styles.description}>Enter the complete RTSP URL including credentials and stream path</Text>
             </View>
           </ScrollView>
 
           {/* Navigation Buttons */}
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.cancelButton} onPress={handleClose}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
+            {currentStep > 1 && (
+              <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+                <Text style={styles.backButtonText}>Back</Text>
+              </TouchableOpacity>
+            )}
             
             <TouchableOpacity 
-              style={[styles.addButton, (!formData.name.trim() || !formData.rtspUrl.trim()) && styles.addButtonDisabled]}
-              onPress={handleComplete}
-              disabled={!formData.name.trim() || !formData.rtspUrl.trim()}
+              style={[
+                styles.nextButton,
+                !validateCurrentStep() && styles.nextButtonDisabled,
+                currentStep === 1 && styles.nextButtonFull
+              ]}
+              onPress={handleNext}
+              disabled={!validateCurrentStep()}
             >
-              <Text style={[styles.addButtonText, (!formData.name.trim() || !formData.rtspUrl.trim()) && styles.addButtonTextDisabled]}>
-                Add Camera
+              <Text style={[
+                styles.nextButtonText,
+                !validateCurrentStep() && styles.nextButtonTextDisabled
+              ]}>
+                {currentStep === totalSteps ? 'Add Camera' : 'Next'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -154,6 +323,38 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     width: 40,
+  },
+  progressContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+  },
+  progressStep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  progressDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#333333',
+    borderWidth: 2,
+    borderColor: '#666666',
+  },
+  progressDotActive: {
+    backgroundColor: '#4A9EFF',
+    borderColor: '#4A9EFF',
+  },
+  progressLine: {
+    width: 40,
+    height: 2,
+    backgroundColor: '#333333',
+    marginHorizontal: 8,
+  },
+  progressLineActive: {
+    backgroundColor: '#4A9EFF',
   },
   scrollContent: {
     flex: 1,
@@ -206,11 +407,30 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: '#555555',
   },
-  description: {
-    fontSize: 14,
+  passwordContainer: {
+    position: 'relative',
+  },
+  passwordInput: {
+    paddingRight: 45,
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: 10,
+    top: 16,
+    padding: 5,
+  },
+  eyeIcon: {
+    fontSize: 18,
+  },
+  readOnlyInput: {
+    backgroundColor: 'rgba(64,64,64,0.3)',
     color: '#8B92A7',
-    textAlign: 'center',
-    lineHeight: 20,
+  },
+  helpText: {
+    fontSize: 12,
+    color: '#8B92A7',
+    marginTop: 4,
+    fontStyle: 'italic',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -219,36 +439,62 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     gap: 12,
   },
-  cancelButton: {
+  backButton: {
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#666666',
   },
-  cancelButtonText: {
+  backButtonText: {
     color: '#666666',
     fontSize: 16,
     fontWeight: '500',
   },
-  addButton: {
+  nextButton: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 16,
     borderRadius: 12,
     backgroundColor: '#4A9EFF',
+    marginLeft: 12,
   },
-  addButtonDisabled: {
+  nextButtonFull: {
+    marginLeft: 0,
+  },
+  nextButtonDisabled: {
     backgroundColor: 'rgba(74,158,255,0.3)',
   },
-  addButtonText: {
+  nextButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
-  addButtonTextDisabled: {
+  nextButtonTextDisabled: {
     color: '#666666',
+  },
+  previewContainer: {
+    width: '100%',
+    backgroundColor: 'rgba(74,158,255,0.1)',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 20,
+    marginBottom: 30,
+    borderWidth: 1,
+    borderColor: 'rgba(74,158,255,0.3)',
+  },
+  previewLabel: {
+    color: '#4A9EFF',
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  previewUrl: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontFamily: 'monospace',
+    lineHeight: 16,
   },
 });
 

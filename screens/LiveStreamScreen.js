@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -8,7 +8,8 @@ import {
   ScrollView,
   Alert,
   Dimensions,
-  ActivityIndicator 
+  ActivityIndicator,
+  Animated
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import RTSPPlayer from '../components/RTSPPlayer';
@@ -43,9 +44,12 @@ const LiveStreamScreen = ({ navigation }) => {
   const [tunnelStatus, setTunnelStatus] = useState({ isActive: false });
   const [loadingFrpc, setLoadingFrpc] = useState(false);
   const [showSecurityAlert, setShowSecurityAlert] = useState(false);
+  const [alertType, setAlertType] = useState('aggression');
+  const [isMinimized, setIsMinimized] = useState(false);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const opacityAnim = useRef(new Animated.Value(1)).current;
   
   useEffect(() => {
-    // Check if native module is available before loading
     const initializeFrpc = async () => {
       try {
         // Test if native module is available
@@ -65,6 +69,42 @@ const LiveStreamScreen = ({ navigation }) => {
     
     initializeFrpc();
   }, []);
+  
+  useEffect(() => {
+    if (isMinimized) {
+      // Continuous pulse animation
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 0.95,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+
+      // Continuous opacity pulse
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(opacityAnim, {
+            toValue: 0.8,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacityAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }
+  }, [isMinimized]);
 
   const handleStartStream = () => {
     if (!rtspUrl.trim()) {
@@ -181,24 +221,31 @@ const LiveStreamScreen = ({ navigation }) => {
               style={[styles.alertButton, styles.weaponAlertButton]}
               onPress={() => {
                 console.log('Alert button pressed');
+                setAlertType('aggression');
                 setShowSecurityAlert(true);
               }}
             >
-              <Ionicons name="warning" size={12} color="#FFFFFF" />
+              <Ionicons name="warning" size={12} color="#333333" />
             </TouchableOpacity>
             
             <TouchableOpacity 
               style={[styles.alertButton, styles.intruderAlertButton]}
-              onPress={() => setShowSecurityAlert(true)}
+              onPress={() => {
+                setAlertType('weapon');
+                setShowSecurityAlert(true);
+              }}
             >
-              <Ionicons name="person" size={12} color="#FFFFFF" />
+              <Ionicons name="person" size={12} color="#333333" />
             </TouchableOpacity>
             
             <TouchableOpacity 
               style={[styles.alertButton, styles.motionAlertButton]}
-              onPress={() => setShowSecurityAlert(true)}
+              onPress={() => {
+                setAlertType('fatigue');
+                setShowSecurityAlert(true);
+              }}
             >
-              <Ionicons name="walk" size={12} color="#FFFFFF" />
+              <Ionicons name="walk" size={12} color="#333333" />
             </TouchableOpacity>
           </View>
         </View>
@@ -404,9 +451,74 @@ const LiveStreamScreen = ({ navigation }) => {
       {/* Security Alert Modal */}
       {showSecurityAlert && (
         <SecurityAlertModal 
-          visible={showSecurityAlert}
-          onClose={() => setShowSecurityAlert(false)}
+          visible={showSecurityAlert && !isMinimized}
+          onClose={(action) => {
+            if (action === 'minimize') {
+              setIsMinimized(true);
+            } else {
+              setShowSecurityAlert(false);
+              setIsMinimized(false);
+            }
+          }}
+          alertType={alertType}
         />
+      )}
+      
+      {/* Minimized Alert */}
+      {showSecurityAlert && isMinimized && (
+        <Animated.View 
+          style={[
+            styles.minimizedThreatCard,
+            {
+              transform: [{ scale: pulseAnim }],
+              opacity: opacityAnim,
+            },
+          ]}
+        >
+          <TouchableOpacity style={styles.minimizedTouchable} onPress={() => setIsMinimized(false)}>
+            <View style={styles.minimizedHeader}>
+              <View style={styles.minimizedCriticalBadge}>
+                <Text style={styles.minimizedCriticalText}>CRITICAL</Text>
+              </View>
+              <View style={styles.minimizedIconContainer}>
+                <Ionicons name="person-circle" size={24} color="#991b1b" />
+                <View style={styles.minimizedAlertBadge}>
+                  <Ionicons name="warning" size={10} color="#FFFFFF" />
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.minimizedContent}>
+              <View style={styles.minimizedMainInfo}>
+                <Text style={styles.minimizedTitle}>Threat</Text>
+                <Text style={styles.minimizedDescription}>Alert Active</Text>
+              </View>
+              
+              <View style={styles.minimizedFooter}>
+                <Text style={styles.minimizedThreatLabel}>Threat Level</Text>
+                <Text style={styles.minimizedThreatPercentage}>96%</Text>
+              </View>
+              <View style={styles.minimizedProgressBarContainer}>
+                <View style={[styles.minimizedProgressBar, { width: '96%' }]} />
+              </View>
+            </View>
+
+            <View style={styles.minimizedExpandIcon}>
+              <Ionicons name="chevron-up" size={16} color="#9ca3af" />
+            </View>
+            
+            <TouchableOpacity 
+              style={styles.minimizedCloseButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                setShowSecurityAlert(false);
+                setIsMinimized(false);
+              }}
+            >
+              <Ionicons name="close" size={14} color="#FFFFFF" />
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </Animated.View>
       )}
     </View>
   );
@@ -708,6 +820,106 @@ const styles = StyleSheet.create({
   },
   motionAlertButton: {
     backgroundColor: '#333333',
+  },
+  minimizedThreatCard: {
+    position: 'absolute',
+    bottom: 100,
+    left: 16,
+    right: 16,
+    zIndex: 999,
+  },
+  minimizedTouchable: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#dc2626',
+    padding: 16,
+    shadowColor: '#dc2626',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  minimizedHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  minimizedCriticalBadge: {
+    backgroundColor: '#dc2626',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 3,
+  },
+  minimizedCriticalText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  minimizedIconContainer: {
+    position: 'relative',
+  },
+  minimizedAlertBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    backgroundColor: '#dc2626',
+    borderRadius: 8,
+    padding: 1,
+  },
+  minimizedContent: {
+    marginBottom: 8,
+  },
+  minimizedMainInfo: {
+    marginBottom: 12,
+  },
+  minimizedTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  minimizedDescription: {
+    color: '#9ca3af',
+    fontSize: 12,
+  },
+  minimizedFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  minimizedThreatLabel: {
+    color: '#9ca3af',
+    fontSize: 10,
+  },
+  minimizedThreatPercentage: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  minimizedProgressBarContainer: {
+    height: 4,
+    backgroundColor: '#333333',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  minimizedProgressBar: {
+    height: '100%',
+    backgroundColor: '#dc2626',
+    borderRadius: 2,
+  },
+  minimizedExpandIcon: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+  },
+  minimizedCloseButton: {
+    position: 'absolute',
+    top: 8,
+    right: 30,
+    padding: 4,
   },
 });
 

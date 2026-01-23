@@ -5,11 +5,59 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const SecurityAlertModal = ({ visible, onClose }) => {
+const SecurityAlertModal = ({ visible, onClose, alertType = 'aggression' }) => {
   const [isWeaponDetection, setIsWeaponDetection] = useState(false);
+  const [alertTime] = useState(new Date());
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
+
+  const getAlertContent = () => {
+    switch (alertType) {
+      case 'weapon':
+        return {
+          title: 'Weapon Detection',
+          description: 'Suspicious weapon-like object identified in monitored area.',
+          icon: 'shield-outline',
+          location: 'Security checkpoint',
+          camera: 'Security Camera 2'
+        };
+      case 'fatigue':
+        return {
+          title: 'Fatigue Detection',
+          description: 'Signs of drowsiness or fatigue detected in subject behavior.',
+          icon: 'eye-off-outline',
+          location: 'Driver monitoring zone',
+          camera: 'Dashboard Camera'
+        };
+      default:
+        return {
+          title: 'Aggression Detected',
+          description: 'Aggressive behavior patterns identified in monitored subject.',
+          icon: 'warning',
+          location: 'Vehicle front seat',
+          camera: 'Front-door Camera'
+        };
+    }
+  };
+
+  const alertContent = getAlertContent();
+  
+  const getTimeAgo = () => {
+    const now = new Date();
+    const diffMs = now - alertTime;
+    const diffSecs = Math.floor(diffMs / 1000);
+    const diffMins = Math.floor(diffSecs / 60);
+    
+    if (diffSecs < 60) {
+      return 'Just now';
+    } else if (diffMins < 60) {
+      return `${diffMins}m ago`;
+    } else {
+      const diffHours = Math.floor(diffMins / 60);
+      return `${diffHours}h ago`;
+    }
+  };
 
   useEffect(() => {
     if (visible) {
@@ -98,30 +146,34 @@ const SecurityAlertModal = ({ visible, onClose }) => {
         <TouchableOpacity style={styles.closeButton} onPress={onClose}>
           <Ionicons name="close" size={20} color="#FFFFFF" />
         </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.minimizeButton} onPress={() => onClose('minimize')}>
+          <Ionicons name="remove" size={20} color="#FFFFFF" />
+        </TouchableOpacity>
 
         {/* Alert Icon */}
         <View style={styles.iconContainer}>
-          <Ionicons name="warning" size={50} color="#FF0000" />
+          <Ionicons name={alertContent.icon} size={50} color="#FF0000" />
         </View>
 
         {/* Main Content */}
         <View style={styles.content}>
-          <Text style={styles.title}>Aggression Detected</Text>
-          <Text style={styles.description}>Aggressive behavior detected in vehicle interior.</Text>
+          <Text style={styles.title}>{alertContent.title}</Text>
+          <Text style={styles.description}>{alertContent.description}</Text>
 
           {/* Metadata */}
           <View style={styles.metadata}>
             <View style={styles.metaItem}>
               <Ionicons name="location" size={18} color="rgba(255, 255, 255, 0.6)" />
-              <Text style={styles.metaText}>Vehicle front seat</Text>
+              <Text style={styles.metaText}>{alertContent.location}</Text>
             </View>
             <View style={styles.metaItem}>
               <Ionicons name="shield" size={18} color="rgba(255, 255, 255, 0.6)" />
-              <Text style={styles.metaText}>Front-door Camera</Text>
+              <Text style={styles.metaText}>{alertContent.camera}</Text>
             </View>
             <View style={styles.metaItem}>
               <Ionicons name="time" size={18} color="rgba(255, 255, 255, 0.6)" />
-              <Text style={styles.metaText}>1h ago</Text>
+              <Text style={styles.metaText}>{getTimeAgo()}</Text>
             </View>
           </View>
         </View>
@@ -209,6 +261,19 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 1001,
+  },
+  minimizeButton: {
+    position: 'absolute',
+    top: 16,
+    right: 58,
+    width: 36,
+    height: 36,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1001,
   },
   iconContainer: {
     width: 110,

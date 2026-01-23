@@ -45,12 +45,12 @@ class CameraTunnelService {
   async addCamera(name, localIP, localPort, remotePort, username = 'admin', password = 'admin', streamPath = 'stream1') {
     const cameras = await StorageService.loadCameras();
     
-    // Validate port conflicts
-    const portValidation = this.validatePort(remotePort, cameras);
-    if (!portValidation.valid) {
-      throw new Error(portValidation.isDuplicate ? 
-        'Port already in use' : 'Port outside valid range (500-65535)');
-    }
+    // Remove port validation - cameras can use same port
+    // const portValidation = this.validatePort(remotePort, cameras);
+    // if (!portValidation.valid) {
+    //   throw new Error(portValidation.isDuplicate ? 
+    //     'Port already in use' : 'Port outside valid range (500-65535)');
+    // }
     
     const camera = {
       name: name.trim(),
@@ -75,16 +75,17 @@ class CameraTunnelService {
   }
   
   async updateCamera(cameraId, updates) {
-    if (updates.remotePort) {
-      const cameras = await StorageService.loadCameras();
-      const otherCameras = cameras.filter(cam => cam.id !== cameraId);
-      const portValidation = this.validatePort(updates.remotePort, otherCameras);
-      
-      if (!portValidation.valid) {
-        throw new Error(portValidation.isDuplicate ? 
-          'Port already in use' : 'Port outside valid range (500-65535)');
-      }
-    }
+    // Remove port validation - cameras can use same port
+    // if (updates.remotePort) {
+    //   const cameras = await StorageService.loadCameras();
+    //   const otherCameras = cameras.filter(cam => cam.id !== cameraId);
+    //   const portValidation = this.validatePort(updates.remotePort, otherCameras);
+    //   
+    //   if (!portValidation.valid) {
+    //     throw new Error(portValidation.isDuplicate ? 
+    //       'Port already in use' : 'Port outside valid range (500-65535)');
+    //   }
+    // }
     
     return await StorageService.updateCamera(cameraId, updates);
   }
