@@ -9,12 +9,19 @@ class AuthService {
   // Register user
   async register(userData) {
     try {
-      const response = await ApiService.register(userData);
+      // Skip API call - simulate successful registration
+      const response = {
+        token: 'mock_token_' + Date.now(),
+        user: {
+          id: Date.now(),
+          fullName: userData.fullName,
+          email: userData.email,
+          phoneNumber: userData.phoneNumber
+        }
+      };
       
-      if (response.token) {
-        await this.saveToken(response.token);
-        await this.saveUser(response.user);
-      }
+      await this.saveToken(response.token);
+      await this.saveUser(response.user);
       
       return response;
     } catch (error) {
@@ -25,12 +32,18 @@ class AuthService {
   // Login user
   async login(credentials) {
     try {
-      const response = await ApiService.login(credentials);
+      // Skip API call - simulate successful login
+      const response = {
+        token: 'mock_token_' + Date.now(),
+        user: {
+          id: Date.now(),
+          email: credentials.email,
+          fullName: 'Mock User'
+        }
+      };
       
-      if (response.token) {
-        await this.saveToken(response.token);
-        await this.saveUser(response.user);
-      }
+      await this.saveToken(response.token);
+      await this.saveUser(response.user);
       
       return response;
     } catch (error) {
@@ -41,10 +54,9 @@ class AuthService {
   // Logout user
   async logout() {
     try {
-      await ApiService.logout();
+      // Skip API call - just clear local storage
       await this.clearStorage();
     } catch (error) {
-      // Clear local storage even if API call fails
       await this.clearStorage();
       throw error;
     }

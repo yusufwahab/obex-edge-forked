@@ -22,10 +22,6 @@ const DashboardScreen = ({ navigation }) => {
   const scrollViewRef = useRef(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowSecurityAlert(true);
-    }, 10000);
-    
     // Auto-start tunneling on app launch
     initializeAndStartTunnel();
     
@@ -39,7 +35,6 @@ const DashboardScreen = ({ navigation }) => {
     });
     
     return () => {
-      clearTimeout(timer);
       logUnsubscribe && logUnsubscribe();
     };
   }, []);
@@ -301,6 +296,36 @@ const DashboardScreen = ({ navigation }) => {
               placeholder="Search by location"
               placeholderTextColor="#666666"
             />
+          </View>
+        </View>
+
+        {/* Alert Test Buttons */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Security Alerts</Text>
+          <View style={styles.alertButtonsContainer}>
+            <TouchableOpacity 
+              style={[styles.alertButton, styles.weaponAlertButton]}
+              onPress={() => setShowSecurityAlert(true)}
+            >
+              <Ionicons name="warning" size={20} color="#FFFFFF" />
+              <Text style={styles.alertButtonText}>Weapon Alert</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.alertButton, styles.intruderAlertButton]}
+              onPress={() => setShowSecurityAlert(true)}
+            >
+              <Ionicons name="person" size={20} color="#FFFFFF" />
+              <Text style={styles.alertButtonText}>Intruder Alert</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.alertButton, styles.motionAlertButton]}
+              onPress={() => setShowSecurityAlert(true)}
+            >
+              <Ionicons name="walk" size={20} color="#FFFFFF" />
+              <Text style={styles.alertButtonText}>Motion Alert</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -965,6 +990,33 @@ const styles = StyleSheet.create({
   noLogsSubtext: {
     color: '#555',
     fontSize: 12,
+  },
+  alertButtonsContainer: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  alertButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 6,
+  },
+  weaponAlertButton: {
+    backgroundColor: '#FF4444',
+  },
+  intruderAlertButton: {
+    backgroundColor: '#FF8800',
+  },
+  motionAlertButton: {
+    backgroundColor: '#4CAF50',
+  },
+  alertButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
 
