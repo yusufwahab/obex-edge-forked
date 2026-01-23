@@ -221,10 +221,34 @@ const DashboardScreen = ({ navigation }) => {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.dashboardTitle}>Dashboard</Text>
-          <TouchableOpacity style={styles.notificationButton} onPress={() => navigation.navigate('Notifications')}>
-            <Ionicons name="notifications-outline" size={24} color="#FFFFFF" />
-            <View style={styles.notificationDot} />
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            <View style={styles.alertButtonsContainer}>
+              <TouchableOpacity 
+                style={[styles.alertButton, styles.weaponAlertButton]}
+                onPress={() => setShowSecurityAlert(true)}
+              >
+                <Ionicons name="warning" size={12} color="#FFFFFF" />
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.alertButton, styles.intruderAlertButton]}
+                onPress={() => setShowSecurityAlert(true)}
+              >
+                <Ionicons name="person" size={12} color="#FFFFFF" />
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.alertButton, styles.motionAlertButton]}
+                onPress={() => setShowSecurityAlert(true)}
+              >
+                <Ionicons name="walk" size={12} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={styles.notificationButton} onPress={() => navigation.navigate('Notifications')}>
+              <Ionicons name="notifications-outline" size={24} color="#FFFFFF" />
+              <View style={styles.notificationDot} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.divider}>
@@ -296,36 +320,6 @@ const DashboardScreen = ({ navigation }) => {
               placeholder="Search by location"
               placeholderTextColor="#666666"
             />
-          </View>
-        </View>
-
-        {/* Alert Test Buttons */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Security Alerts</Text>
-          <View style={styles.alertButtonsContainer}>
-            <TouchableOpacity 
-              style={[styles.alertButton, styles.weaponAlertButton]}
-              onPress={() => setShowSecurityAlert(true)}
-            >
-              <Ionicons name="warning" size={20} color="#FFFFFF" />
-              <Text style={styles.alertButtonText}>Weapon Alert</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.alertButton, styles.intruderAlertButton]}
-              onPress={() => setShowSecurityAlert(true)}
-            >
-              <Ionicons name="person" size={20} color="#FFFFFF" />
-              <Text style={styles.alertButtonText}>Intruder Alert</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.alertButton, styles.motionAlertButton]}
-              onPress={() => setShowSecurityAlert(true)}
-            >
-              <Ionicons name="walk" size={20} color="#FFFFFF" />
-              <Text style={styles.alertButtonText}>Motion Alert</Text>
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -552,6 +546,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingTop: 60,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   backButton: {
     padding: 8,
@@ -993,30 +992,23 @@ const styles = StyleSheet.create({
   },
   alertButtonsContainer: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 4,
   },
   alertButton: {
-    flex: 1,
-    flexDirection: 'row',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 8,
-    gap: 6,
   },
   weaponAlertButton: {
-    backgroundColor: '#FF4444',
+    backgroundColor: '#333333',
   },
   intruderAlertButton: {
-    backgroundColor: '#FF8800',
+    backgroundColor: '#333333',
   },
   motionAlertButton: {
-    backgroundColor: '#4CAF50',
-  },
-  alertButtonText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
+    backgroundColor: '#333333',
   },
 });
 

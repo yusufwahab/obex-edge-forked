@@ -15,6 +15,7 @@ import RTSPPlayer from '../components/RTSPPlayer';
 import NetworkTest from '../components/NetworkTest';
 import CameraTunnelService from '../services/CameraTunnelService';
 import ModuleTest from '../components/ModuleTest';
+import SecurityAlertModal from '../components/SecurityAlertModal';
 
 const { width, height } = Dimensions.get('window');
 
@@ -41,6 +42,7 @@ const LiveStreamScreen = ({ navigation }) => {
   const [frpcCameras, setFrpcCameras] = useState([]);
   const [tunnelStatus, setTunnelStatus] = useState({ isActive: false });
   const [loadingFrpc, setLoadingFrpc] = useState(false);
+  const [showSecurityAlert, setShowSecurityAlert] = useState(false);
   
   useEffect(() => {
     // Check if native module is available before loading
@@ -173,7 +175,33 @@ const LiveStreamScreen = ({ navigation }) => {
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.title}>Live Stream</Text>
-        <View style={styles.placeholder} />
+        <View style={styles.headerRight}>
+          <View style={styles.alertButtonsContainer}>
+            <TouchableOpacity 
+              style={[styles.alertButton, styles.weaponAlertButton]}
+              onPress={() => {
+                console.log('Alert button pressed');
+                setShowSecurityAlert(true);
+              }}
+            >
+              <Ionicons name="warning" size={12} color="#FFFFFF" />
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.alertButton, styles.intruderAlertButton]}
+              onPress={() => setShowSecurityAlert(true)}
+            >
+              <Ionicons name="person" size={12} color="#FFFFFF" />
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.alertButton, styles.motionAlertButton]}
+              onPress={() => setShowSecurityAlert(true)}
+            >
+              <Ionicons name="walk" size={12} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -357,6 +385,12 @@ const LiveStreamScreen = ({ navigation }) => {
         {/* Network Test */}
         <NetworkTest cameraIP="192.168.1.10" />
 
+        {/* Module Test */}
+        <ModuleTest />
+        
+        {/* Network Test */}
+        <NetworkTest cameraIP="192.168.1.10" />
+
         {/* Stream Info */}
         <View style={styles.infoContainer}>
           <Text style={styles.infoTitle}>RTSP Streaming Tips:</Text>
@@ -366,6 +400,14 @@ const LiveStreamScreen = ({ navigation }) => {
           <Text style={styles.infoText}>• Check network connectivity</Text>
         </View>
       </ScrollView>
+      
+      {/* Security Alert Modal */}
+      {showSecurityAlert && (
+        <SecurityAlertModal 
+          visible={showSecurityAlert}
+          onClose={() => setShowSecurityAlert(false)}
+        />
+      )}
     </View>
   );
 };
@@ -382,6 +424,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 60,
     paddingBottom: 20,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   backButton: {
     padding: 8,
@@ -641,6 +688,26 @@ const styles = StyleSheet.create({
   disabledButton: {
     backgroundColor: '#666',
     opacity: 0.5,
+  },
+  alertButtonsContainer: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  alertButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  weaponAlertButton: {
+    backgroundColor: '#333333',
+  },
+  intruderAlertButton: {
+    backgroundColor: '#333333',
+  },
+  motionAlertButton: {
+    backgroundColor: '#333333',
   },
 });
 
