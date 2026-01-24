@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,6 +17,7 @@ const DashboardScreen = ({ navigation }) => {
   const [showAddCameraModal, setShowAddCameraModal] = useState(false);
   const [showSecurityAlert, setShowSecurityAlert] = useState(false);
   const [showThreatCard, setShowThreatCard] = useState(false);
+  const [alertType, setAlertType] = useState('aggression');
   const [frpcLogs, setFrpcLogs] = useState([]);
   const [showLogs, setShowLogs] = useState(false);
   const scrollViewRef = useRef(null);
@@ -86,9 +87,12 @@ const DashboardScreen = ({ navigation }) => {
         console.log('📷 Creating default camera...');
         await CameraTunnelService.addCamera(
           'Default Camera',
-          '192.168.1.10',
-          554,
-          557
+          'staging.ai.avzdax.com',
+          557,
+          557,
+          'admin',
+          'Admin1234',
+          '1/1'
         );
         console.log('✅ Default camera created');
       } else {
@@ -212,7 +216,7 @@ const DashboardScreen = ({ navigation }) => {
         id: cam.id,
         name: cam.name,
         location: 'Camera Location',
-        rtspUrl: `rtsp://${cam.username}:${cam.password}@${cam.localIP}:${cam.localPort}/${cam.streamPath}`,
+        rtspUrl: `rtsp://${cam.username || 'admin'}:${cam.password || 'Admin1234'}@${cam.localIP || 'staging.ai.avzdax.com'}:${cam.localPort || 557}/${cam.streamPath || '1/1'}`,
         isOnline: true,
         isPlaying: false
       }));
@@ -223,18 +227,35 @@ const DashboardScreen = ({ navigation }) => {
   };
   
   const handlePlayCamera = (cameraId) => {
+    const camera = cameras.find(cam => cam.id === cameraId);
+    console.log('🎬 Playing camera:', camera?.name);
+    console.log('🔗 RTSP URL:', camera?.rtspUrl);
     setCameras(prev => prev.map(cam => 
       cam.id === cameraId ? { ...cam, isPlaying: !cam.isPlaying } : cam
     ));
   };
   
   const handleDeleteCamera = async (cameraId) => {
-    try {
-      await CameraTunnelService.removeCamera(cameraId);
-      loadCamerasFromStorage(); // Reload cameras after deletion
-    } catch (error) {
-      console.error('Failed to delete camera:', error);
-    }
+    const camera = cameras.find(cam => cam.id === cameraId);
+    Alert.alert(
+      'Delete Camera',
+      `Are you sure you want to delete the camera ${camera?.name}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await CameraTunnelService.removeCamera(cameraId);
+              loadCamerasFromStorage();
+            } catch (error) {
+              console.error('Failed to delete camera:', error);
+            }
+          }
+        }
+      ]
+    );
   };
 
   const handleAddCamera = (cameraData) => {
@@ -262,23 +283,32 @@ const DashboardScreen = ({ navigation }) => {
             <View style={styles.alertButtonsContainer}>
               <TouchableOpacity 
                 style={[styles.alertButton, styles.weaponAlertButton]}
-                onPress={() => setShowSecurityAlert(true)}
+                onPress={() => {
+                  setAlertType('aggression');
+                  setShowSecurityAlert(true);
+                }}
               >
-                <Ionicons name="warning" size={12} color="#333333" />
+                <Ionicons name="warning" size={12} color="#212121" />
               </TouchableOpacity>
               
               <TouchableOpacity 
                 style={[styles.alertButton, styles.intruderAlertButton]}
-                onPress={() => setShowSecurityAlert(true)}
+                onPress={() => {
+                  setAlertType('weapon');
+                  setShowSecurityAlert(true);
+                }}
               >
-                <Ionicons name="person" size={12} color="#333333" />
+                <Ionicons name="person" size={12} color="#212121" />
               </TouchableOpacity>
               
               <TouchableOpacity 
                 style={[styles.alertButton, styles.motionAlertButton]}
-                onPress={() => setShowSecurityAlert(true)}
+                onPress={() => {
+                  setAlertType('fatigue');
+                  setShowSecurityAlert(true);
+                }}
               >
-                <Ionicons name="walk" size={12} color="#333333" />
+                <Ionicons name="walk" size={12} color="#212121" />
               </TouchableOpacity>
             </View>
             <TouchableOpacity style={styles.notificationButton} onPress={() => navigation.navigate('Notifications')}>
@@ -376,6 +406,7 @@ const DashboardScreen = ({ navigation }) => {
         <SecurityAlertModal 
           visible={showSecurityAlert}
           onClose={handleCloseSecurityAlert}
+          alertType={alertType}
         />
 
         {/* My Cameras Section */}
@@ -386,23 +417,32 @@ const DashboardScreen = ({ navigation }) => {
               <View style={styles.alertButtonsContainer}>
                 <TouchableOpacity 
                   style={[styles.alertButton, styles.weaponAlertButton]}
-                  onPress={() => setShowSecurityAlert(true)}
+                  onPress={() => {
+                    setAlertType('aggression');
+                    setShowSecurityAlert(true);
+                  }}
                 >
-                  <Ionicons name="warning" size={12} color="#333333" />
+                  <Ionicons name="warning" size={12} color="#212121" />
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
                   style={[styles.alertButton, styles.intruderAlertButton]}
-                  onPress={() => setShowSecurityAlert(true)}
+                  onPress={() => {
+                    setAlertType('weapon');
+                    setShowSecurityAlert(true);
+                  }}
                 >
-                  <Ionicons name="person" size={12} color="#333333" />
+                  <Ionicons name="person" size={12} color="#212121" />
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
                   style={[styles.alertButton, styles.motionAlertButton]}
-                  onPress={() => setShowSecurityAlert(true)}
+                  onPress={() => {
+                    setAlertType('fatigue');
+                    setShowSecurityAlert(true);
+                  }}
                 >
-                  <Ionicons name="walk" size={12} color="#333333" />
+                  <Ionicons name="walk" size={12} color="#212121" />
                 </TouchableOpacity>
               </View>
               <TouchableOpacity 
@@ -475,6 +515,12 @@ const DashboardScreen = ({ navigation }) => {
                   </View>
                 ))}
                 
+                {/* Threat Card - appears below cameras */}
+                <ThreatCard 
+                  visible={showThreatCard}
+                  onExpand={handleExpandThreatCard}
+                />
+                
                 {/* Add Camera Card */}
                 <TouchableOpacity 
                   style={[styles.cameraCard, styles.addCameraCard]}
@@ -540,13 +586,40 @@ const DashboardScreen = ({ navigation }) => {
               )}
             </View>
           )}
+          
+          {/* Alert Buttons */}
+          <View style={styles.logsAlertButtons}>
+            <TouchableOpacity 
+              style={[styles.alertButton, styles.weaponAlertButton]}
+              onPress={() => {
+                setAlertType('aggression');
+                setShowSecurityAlert(true);
+              }}
+            >
+              <Ionicons name="warning" size={12} color="#212121" />
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.alertButton, styles.intruderAlertButton]}
+              onPress={() => {
+                setAlertType('weapon');
+                setShowSecurityAlert(true);
+              }}
+            >
+              <Ionicons name="person" size={12} color="#212121" />
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.alertButton, styles.motionAlertButton]}
+              onPress={() => {
+                setAlertType('fatigue');
+                setShowSecurityAlert(true);
+              }}
+            >
+              <Ionicons name="walk" size={12} color="#212121" />
+            </TouchableOpacity>
+          </View>
         </View>
-
-        {/* Threat Card - appears below camera section when modal is closed */}
-        <ThreatCard 
-          visible={showThreatCard}
-          onExpand={handleExpandThreatCard}
-        />
 
         <View style={styles.bottomPadding} />
       </ScrollView>
@@ -790,7 +863,7 @@ const styles = StyleSheet.create({
     borderColor: '#555555',
   },
   cameraFullContainer: {
-    height: 180,
+    height: 240,
   },
   cameraHeader: {
     flexDirection: 'row',
@@ -883,7 +956,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 200,
+    minHeight: 280,
   },
   addCameraIcon: {
     marginBottom: 12,
@@ -1101,13 +1174,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   weaponAlertButton: {
-    backgroundColor: '#333333',
+    backgroundColor: '#212121',
   },
   intruderAlertButton: {
-    backgroundColor: '#333333',
+    backgroundColor: '#212121',
   },
   motionAlertButton: {
-    backgroundColor: '#333333',
+    backgroundColor: '#212121',
+  },
+  logsAlertButtons: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 16,
   },
 });
 

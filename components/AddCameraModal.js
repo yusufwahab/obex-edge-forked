@@ -7,11 +7,11 @@ const AddCameraModal = ({ visible, onClose, onComplete }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     name: '',
-    localIP: '192.168.1.10',
-    localPort: '554',
+    localIP: 'staging.ai.avzdax.com',
+    localPort: '557',
     username: 'admin',
-    password: 'admin',
-    streamPath: 'stream1',
+    password: 'Admin1234',
+    streamPath: '1/1',
     remotePort: '557'
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -71,11 +71,11 @@ const AddCameraModal = ({ visible, onClose, onComplete }) => {
     setCurrentStep(1);
     setFormData({
       name: '',
-      localIP: '192.168.1.10',
-      localPort: '554',
+      localIP: 'staging.ai.avzdax.com',
+      localPort: '557',
       username: 'admin',
-      password: 'admin',
-      streamPath: 'stream1',
+      password: 'Admin1234',
+      streamPath: '1/1',
       remotePort: '557'
     });
     setShowPassword(false);
@@ -114,7 +114,7 @@ const AddCameraModal = ({ visible, onClose, onComplete }) => {
               <Text style={styles.inputLabel}>Local IP Address</Text>
               <TextInput
                 style={styles.input}
-                placeholder="192.168.1.10"
+                placeholder="staging.ai.avzdax.com"
                 placeholderTextColor="#8B92A7"
                 value={formData.localIP}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, localIP: text }))}
@@ -125,22 +125,12 @@ const AddCameraModal = ({ visible, onClose, onComplete }) => {
               <Text style={styles.inputLabel}>Local Port</Text>
               <TextInput
                 style={styles.input}
-                placeholder="554"
+                placeholder="557"
                 placeholderTextColor="#8B92A7"
                 value={formData.localPort}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, localPort: text }))}
                 keyboardType="numeric"
               />
-            </View>
-            
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Remote Port</Text>
-              <TextInput
-                style={[styles.input, styles.readOnlyInput]}
-                value="557"
-                editable={false}
-              />
-              <Text style={styles.helpText}>Fixed port for FRPC tunnel</Text>
             </View>
           </>
         );
@@ -168,7 +158,7 @@ const AddCameraModal = ({ visible, onClose, onComplete }) => {
               <View style={styles.passwordContainer}>
                 <TextInput
                   style={[styles.input, styles.passwordInput]}
-                  placeholder="admin or 12345"
+                  placeholder="Admin1234"
                   placeholderTextColor="#8B92A7"
                   value={formData.password}
                   onChangeText={(text) => setFormData(prev => ({ ...prev, password: text }))}
@@ -188,7 +178,7 @@ const AddCameraModal = ({ visible, onClose, onComplete }) => {
               <Text style={styles.inputLabel}>Stream Path</Text>
               <TextInput
                 style={styles.input}
-                placeholder="stream1"
+                placeholder="1/1"
                 placeholderTextColor="#8B92A7"
                 value={formData.streamPath}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, streamPath: text }))}
