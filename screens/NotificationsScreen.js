@@ -1,63 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const NotificationsScreen = ({ navigation }) => {
   const [filter, setFilter] = useState('all');
+  const [notifications, setNotifications] = useState([]);
   const insets = useSafeAreaInsets();
   
-  const notifications = [
-    {
-      id: 1,
-      type: 'Weapon Detection Alert',
-      message: 'Weapon detected in Security Zone - Immediate attention required',
-      time: '1 minute ago',
-      icon: 'shield',
-      iconColor: '#FF4500',
-      unread: true,
-      weaponDetection: true,
-    },
-    {
-      id: 2,
-      type: 'Unauthorized Passenger Detected',
-      message: 'Unauthorized access attempt at Front-door Camera',
-      time: '2 minutes ago',
-      icon: 'warning',
-      iconColor: '#FF0000',
-      unread: true,
-      alertType: 'unauthorized',
-    },
-    {
-      id: 3,
-      type: 'Aggressive Passengers Detected',
-      message: 'Aggressive behavior detected in vehicle interior',
-      time: '15 minutes ago',
-      icon: 'person',
-      iconColor: '#C4C44A',
-      unread: true,
-      alertType: 'aggressive',
-    },
-    {
-      id: 4,
-      type: 'System Alert',
-      message: 'Back-yard Camera went offline',
-      time: '1 hour ago',
-      icon: 'alert-circle',
-      iconColor: '#FF6B6B',
-      unread: false,
-    },
-    {
-      id: 5,
-      type: 'Security Update',
-      message: 'System health check completed successfully',
-      time: '3 hours ago',
-      icon: 'checkmark-circle',
-      iconColor: '#00FF00',
-      unread: false,
-    },
-  ];
+  useEffect(() => {
+    loadNotifications();
+  }, []);
+  
+  const loadNotifications = async () => {
+    try {
+      const storedNotifications = await AsyncStorage.getItem('notifications');
+      if (storedNotifications) {
+        setNotifications(JSON.parse(storedNotifications));
+      }
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
+    }
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: '#212121' }]}>
@@ -107,11 +73,18 @@ const NotificationsScreen = ({ navigation }) => {
               key={notification.id} 
               style={[styles.notificationItem, notification.unread && styles.unreadItem]}
               onPress={() => {
-                if (notification.weaponDetection) {
-                  navigation.navigate('History', { weaponDetection: true });
-                } else if (notification.alertType) {
-                  navigation.navigate('History', { alertType: notification.alertType });
-                }
+                // Mark notification as read
+                const updatedNotifications = notifications.map(n => 
+                  n.id === notification.id ? { ...n, unread: false } : n
+                );
+                setNotifications(updatedNotifications);
+                AsyncStorage.setItem('notifications', JSON.stringify(updatedNotifications));
+                
+                navigation.navigate('History', { 
+                  alertType: notification.alertType,
+                  rtspUrl: notification.rtspUrl,
+                  timestamp: notification.timestamp
+                });
               }}
             >
               <View style={styles.notificationIcon}>

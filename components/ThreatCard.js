@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const ThreatCard = ({ visible, onExpand }) => {
+const ThreatCard = ({ visible, onExpand, onCancel, alertType = 'aggression' }) => {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(1)).current;
 
@@ -42,6 +42,29 @@ const ThreatCard = ({ visible, onExpand }) => {
     }
   }, [visible]);
 
+  const getAlertInfo = () => {
+    const alertTypes = {
+      aggression: {
+        description: 'Aggression Detected',
+        icon: 'person-circle',
+        percentage: '96%'
+      },
+      weapon: {
+        description: 'Weapon Detected',
+        icon: 'shield',
+        percentage: '98%'
+      },
+      fatigue: {
+        description: 'Driver Fatigue Detected',
+        icon: 'warning',
+        percentage: '85%'
+      }
+    };
+    return alertTypes[alertType] || alertTypes.aggression;
+  };
+
+  const alertInfo = getAlertInfo();
+
   if (!visible) return null;
 
   return (
@@ -54,13 +77,13 @@ const ThreatCard = ({ visible, onExpand }) => {
         },
       ]}
     >
-      <TouchableOpacity style={styles.touchable} onPress={onExpand}>
+      <View style={styles.touchable}>
       <View style={styles.header}>
         <View style={styles.criticalBadge}>
           <Text style={styles.criticalText}>CRITICAL</Text>
         </View>
         <View style={styles.iconContainer}>
-          <Ionicons name="person-circle" size={24} color="#991b1b" />
+          <Ionicons name={alertInfo.icon} size={24} color="#991b1b" />
           <View style={styles.alertBadge}>
             <Ionicons name="warning" size={10} color="#FFFFFF" />
           </View>
@@ -70,22 +93,27 @@ const ThreatCard = ({ visible, onExpand }) => {
       <View style={styles.content}>
         <View style={styles.mainInfo}>
           <Text style={styles.title}>Threat</Text>
-          <Text style={styles.description}>Aggression Detected</Text>
+          <Text style={styles.description}>{alertInfo.description}</Text>
         </View>
         
         <View style={styles.footer}>
           <Text style={styles.threatLabel}>Threat Level</Text>
-          <Text style={styles.threatPercentage}>96%</Text>
+          <Text style={styles.threatPercentage}>{alertInfo.percentage}</Text>
         </View>
         <View style={styles.progressBarContainer}>
-          <View style={[styles.progressBar, { width: '96%' }]} />
+          <View style={[styles.progressBar, { width: alertInfo.percentage }]} />
         </View>
       </View>
 
       <View style={styles.expandIcon}>
-        <Ionicons name="chevron-up" size={16} color="#9ca3af" />
+        <TouchableOpacity onPress={onCancel} style={styles.cancelButton}>
+          <Ionicons name="close" size={16} color="#1a1a1a" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={onExpand} style={styles.expandButton}>
+          <Ionicons name="chevron-up" size={16} color="#9ca3af" />
+        </TouchableOpacity>
       </View>
-      </TouchableOpacity>
+      </View>
     </Animated.View>
   );
 };
@@ -181,6 +209,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 24,
+  },
+  cancelButton: {
+    padding: 2,
+  },
+  expandButton: {
+    padding: 2,
   },
 });
 

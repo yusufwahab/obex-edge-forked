@@ -21,12 +21,15 @@ export default function SignIn({ navigation }) {
     setLoading(true);
     try {
       const response = await AuthService.login({ email, password });
-      Alert.alert('Success', 'Login successful!');
-      setShowCameraSetup(true);
+      
+      // 8 second timeout before navigation
+      setTimeout(() => {
+        setLoading(false);
+        navigation.navigate('Dashboard', { showLoginSuccess: true });
+      }, 8000);
     } catch (error) {
       Alert.alert('Error', error.message || 'Login failed');
       console.error('Login error:', error);
-    } finally {
       setLoading(false);
     }
   };

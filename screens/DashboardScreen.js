@@ -11,12 +11,18 @@ import SecurityAlertModal from '../components/SecurityAlertModal';
 import ThreatCard from '../components/ThreatCard';
 import CameraTunnelService from '../services/CameraTunnelService';
 import PermissionService from '../services/PermissionService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import LoginSuccessModal from '../components/LoginSuccessModal';
+import CameraSetupModal from '../components/CameraSetupModal';
 
-const DashboardScreen = ({ navigation }) => {
+const DashboardScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const [showAddCameraModal, setShowAddCameraModal] = useState(false);
   const [showSecurityAlert, setShowSecurityAlert] = useState(false);
   const [showThreatCard, setShowThreatCard] = useState(false);
+  const [showLoginSuccess, setShowLoginSuccess] = useState(route?.params?.showLoginSuccess || false);
+  const [showOnboardingCards, setShowOnboardingCards] = useState(false);
+  const [showCameraSetup, setShowCameraSetup] = useState(false);
   const [alertType, setAlertType] = useState('aggression');
   const [frpcLogs, setFrpcLogs] = useState([]);
   const [showLogs, setShowLogs] = useState(false);
@@ -28,6 +34,9 @@ const DashboardScreen = ({ navigation }) => {
     
     // Load cameras from storage
     loadCamerasFromStorage();
+    
+    // Load notifications
+    loadNotifications();
     
     // Setup FRPC log listener
     const logUnsubscribe = CameraTunnelService.onFRPCLog((log) => {
@@ -83,21 +92,7 @@ const DashboardScreen = ({ navigation }) => {
       
       // Add default camera if no cameras exist
       const existingCameras = await CameraTunnelService.getCameras();
-      if (existingCameras.length === 0) {
-        console.log('📷 Creating default camera...');
-        await CameraTunnelService.addCamera(
-          'Default Camera',
-          'staging.ai.avzdax.com',
-          557,
-          557,
-          'admin',
-          'Admin1234',
-          '1/1'
-        );
-        console.log('✅ Default camera created');
-      } else {
-        console.log(`✅ Found ${existingCameras.length} existing cameras`);
-      }
+      console.log(`✅ Found ${existingCameras.length} existing cameras`);
       
       // Run diagnostics first
       console.log('🔍 Running FRPC diagnostics...');
@@ -176,11 +171,66 @@ const DashboardScreen = ({ navigation }) => {
     }, 300);
   };
 
+  const createNotification = async (alertType) => {
+    const alertTypes = {
+      aggression: {
+        type: 'Aggressive Passengers Detected',
+        message: 'Aggressive behavior detected in vehicle interior',
+        icon: 'person',
+        iconColor: '#C4C44A'
+      },
+      weapon: {
+        type: 'Weapon Detection Alert', 
+        message: 'Weapon detected in Security Zone - Immediate attention required',
+        icon: 'shield',
+        iconColor: '#FF4500'
+      },
+      fatigue: {
+        type: 'Driver Fatigue Alert',
+        message: 'Driver fatigue detected - Pull over safely',
+        icon: 'warning',
+        iconColor: '#FF0000'
+      }
+    };
+
+    const notification = {
+      id: Date.now(),
+      ...alertTypes[alertType],
+      time: 'Just now',
+      timestamp: new Date().toISOString(),
+      unread: true,
+      alertType,
+      rtspUrl: cameras.length > 0 ? cameras[0].rtspUrl : null
+    };
+
+    try {
+      const existingNotifications = await AsyncStorage.getItem('notifications');
+      const notifications = existingNotifications ? JSON.parse(existingNotifications) : [];
+      notifications.unshift(notification);
+      await AsyncStorage.setItem('notifications', JSON.stringify(notifications));
+      setNotifications(notifications);
+    } catch (error) {
+      console.error('Failed to save notification:', error);
+    }
+  };
+
+  const loadNotifications = async () => {
+    try {
+      const storedNotifications = await AsyncStorage.getItem('notifications');
+      if (storedNotifications) {
+        setNotifications(JSON.parse(storedNotifications));
+      }
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
+    }
+  };
+
   const handleExpandThreatCard = () => {
     setShowThreatCard(false);
     setShowSecurityAlert(true);
   };
   const [cameras, setCameras] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   // Commented out existing cameras
   // const [cameras, setCameras] = useState([
   //   {
@@ -286,6 +336,7 @@ const DashboardScreen = ({ navigation }) => {
                 onPress={() => {
                   setAlertType('aggression');
                   setShowSecurityAlert(true);
+                  createNotification('aggression');
                 }}
               >
                 <Ionicons name="warning" size={12} color="#212121" />
@@ -296,6 +347,7 @@ const DashboardScreen = ({ navigation }) => {
                 onPress={() => {
                   setAlertType('weapon');
                   setShowSecurityAlert(true);
+                  createNotification('weapon');
                 }}
               >
                 <Ionicons name="person" size={12} color="#212121" />
@@ -306,6 +358,7 @@ const DashboardScreen = ({ navigation }) => {
                 onPress={() => {
                   setAlertType('fatigue');
                   setShowSecurityAlert(true);
+                  createNotification('fatigue');
                 }}
               >
                 <Ionicons name="walk" size={12} color="#212121" />
@@ -313,7 +366,7 @@ const DashboardScreen = ({ navigation }) => {
             </View>
             <TouchableOpacity style={styles.notificationButton} onPress={() => navigation.navigate('Notifications')}>
               <Ionicons name="notifications-outline" size={24} color="#FFFFFF" />
-              <View style={styles.notificationDot} />
+              {notifications.length > 0 && <View style={styles.notificationDot} />}
             </TouchableOpacity>
           </View>
         </View>
@@ -402,6 +455,15 @@ const DashboardScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
+        {/* Login Success Modal */}
+        <LoginSuccessModal 
+          visible={showLoginSuccess}
+          onClose={() => {
+            setShowLoginSuccess(false);
+            setShowCameraSetup(true);
+          }}
+        />
+
         {/* Security Alert Modal */}
         <SecurityAlertModal 
           visible={showSecurityAlert}
@@ -420,6 +482,7 @@ const DashboardScreen = ({ navigation }) => {
                   onPress={() => {
                     setAlertType('aggression');
                     setShowSecurityAlert(true);
+                    createNotification('aggression');
                   }}
                 >
                   <Ionicons name="warning" size={12} color="#212121" />
@@ -430,6 +493,7 @@ const DashboardScreen = ({ navigation }) => {
                   onPress={() => {
                     setAlertType('weapon');
                     setShowSecurityAlert(true);
+                    createNotification('weapon');
                   }}
                 >
                   <Ionicons name="person" size={12} color="#212121" />
@@ -440,6 +504,7 @@ const DashboardScreen = ({ navigation }) => {
                   onPress={() => {
                     setAlertType('fatigue');
                     setShowSecurityAlert(true);
+                    createNotification('fatigue');
                   }}
                 >
                   <Ionicons name="walk" size={12} color="#212121" />
@@ -519,6 +584,8 @@ const DashboardScreen = ({ navigation }) => {
                 <ThreatCard 
                   visible={showThreatCard}
                   onExpand={handleExpandThreatCard}
+                  onCancel={() => setShowThreatCard(false)}
+                  alertType={alertType}
                 />
                 
                 {/* Add Camera Card */}
@@ -656,6 +723,11 @@ const DashboardScreen = ({ navigation }) => {
         visible={showAddCameraModal}
         onClose={() => setShowAddCameraModal(false)}
         onComplete={handleAddCamera}
+      />
+
+      <CameraSetupModal 
+        visible={showCameraSetup}
+        onClose={() => setShowCameraSetup(false)}
       />
     </View>
   );

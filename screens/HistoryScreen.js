@@ -1,51 +1,50 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Video } from 'expo-av';
+import RTSPPlayer from '../components/RTSPPlayer';
 
 const HistoryScreen = ({ navigation, route }) => {
-  const { alertType, weaponDetection } = route.params || {};
+  const { alertType, rtspUrl, timestamp } = route.params || {};
 
   const getAlertData = () => {
-    if (weaponDetection) {
+    const alertTime = timestamp ? new Date(timestamp).toLocaleString() : new Date().toLocaleString();
+    
+    if (alertType === 'weapon') {
       return {
         title: 'Weapon Detection Alert',
-        video: require('../Video5.mp4'),
         details: {
           location: 'Security Zone',
           camera: 'Security Alert Camera',
-          timestamp: '2024-01-15 18:22:45',
-          duration: '00:03:12',
+          timestamp: alertTime,
+          duration: 'Live Feed (30s before alert)',
           severity: 'Critical',
-          description: 'Weapon detected in monitored area. Advanced AI analysis identified potential threat object requiring immediate attention.',
+          description: 'Weapon detected in monitored area. Showing live RTSP feed from 30 seconds before alert was triggered.',
           actions: 'Security team dispatched, area secured, authorities notified, incident escalated to emergency response.'
         }
       };
-    } else if (alertType === 'unauthorized') {
+    } else if (alertType === 'fatigue') {
       return {
-        title: 'Unauthorized Passenger Detected',
-        video: require('../Video 1.mp4'),
+        title: 'Driver Fatigue Alert',
         details: {
-          location: 'Vehicle Front Seat',
-          camera: 'Front-door Camera',
-          timestamp: '2024-01-15 14:32:18',
-          duration: '00:02:45',
+          location: 'Driver Seat',
+          camera: 'Interior Camera',
+          timestamp: alertTime,
+          duration: 'Live Feed (30s before alert)',
           severity: 'High',
-          description: 'An unauthorized individual was detected attempting to access the vehicle. The person was not recognized by the facial recognition system and triggered a security alert.',
-          actions: 'Security team notified, vehicle locked automatically, incident logged for review.'
+          description: 'Driver fatigue detected through behavioral analysis. Showing live RTSP feed from 30 seconds before alert was triggered.',
+          actions: 'Driver alerted, safe stopping location suggested, emergency contacts notified.'
         }
       };
     } else {
       return {
         title: 'Aggressive Passengers Detected',
-        video: require('../video3.mp4'),
         details: {
           location: 'Vehicle Interior',
           camera: 'Interior Camera',
-          timestamp: '2024-01-15 16:45:22',
-          duration: '00:01:38',
+          timestamp: alertTime,
+          duration: 'Live Feed (30s before alert)',
           severity: 'Critical',
-          description: 'Aggressive behavior detected among passengers. Elevated voice levels and sudden movements triggered the behavioral analysis system.',
+          description: 'Aggressive behavior detected among passengers. Showing live RTSP feed from 30 seconds before alert was triggered.',
           actions: 'Emergency protocols activated, authorities contacted, driver alerted immediately.'
         }
       };
@@ -76,14 +75,18 @@ const HistoryScreen = ({ navigation, route }) => {
 
         {/* Video Player */}
         <View style={styles.videoContainer}>
-          <Video
-            source={alertData.video}
-            style={styles.video}
-            shouldPlay={false}
-            isLooping={true}
-            resizeMode="cover"
-            useNativeControls={true}
-          />
+          {rtspUrl ? (
+            <RTSPPlayer
+              rtspUrl={rtspUrl}
+              style={styles.video}
+              showControls={true}
+            />
+          ) : (
+            <View style={styles.noVideoContainer}>
+              <Ionicons name="videocam-off" size={48} color="#666" />
+              <Text style={styles.noVideoText}>No camera feed available</Text>
+            </View>
+          )}
         </View>
 
         {/* Details Section */}
@@ -197,6 +200,18 @@ const styles = StyleSheet.create({
   video: {
     width: '100%',
     height: 200,
+  },
+  noVideoContainer: {
+    width: '100%',
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#1A1A1A',
+  },
+  noVideoText: {
+    color: '#666',
+    fontSize: 16,
+    marginTop: 10,
   },
   detailsContainer: {
     paddingHorizontal: 16,
