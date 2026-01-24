@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import RTSPPlayer from '../components/RTSPPlayer';
 
 const HistoryScreen = ({ navigation, route }) => {
-  const { alertType, rtspUrl, timestamp } = route.params || {};
+  const { alertType, rtspUrl, recordingUrl, timestamp } = route.params || {};
 
   const getAlertData = () => {
     const alertTime = timestamp ? new Date(timestamp).toLocaleString() : new Date().toLocaleString();
@@ -75,7 +75,9 @@ const HistoryScreen = ({ navigation, route }) => {
 
         {/* Video Player */}
         <View style={styles.videoContainer}>
-          {rtspUrl ? (
+          {recordingUrl ? (
+            <Text style={styles.recordingText}>Recording: {recordingUrl}</Text>
+          ) : rtspUrl ? (
             <RTSPPlayer
               rtspUrl={rtspUrl}
               style={styles.video}
