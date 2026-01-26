@@ -14,11 +14,12 @@ import PermissionService from '../services/PermissionService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoginSuccessModal from '../components/LoginSuccessModal';
 import CameraSetupModal from '../components/CameraSetupModal';
+import { useAlerts } from '../hooks/useAlerts';
 
 const DashboardScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
+  const { currentAlert, isAlertVisible, closeAlert, showFullAlert, simulateAlert, startAlertMonitoring } = useAlerts();
   const [showAddCameraModal, setShowAddCameraModal] = useState(false);
-  const [showSecurityAlert, setShowSecurityAlert] = useState(false);
   const [showThreatCard, setShowThreatCard] = useState(false);
   const [showLoginSuccess, setShowLoginSuccess] = useState(route?.params?.showLoginSuccess || false);
   const [showOnboardingCards, setShowOnboardingCards] = useState(false);
@@ -27,6 +28,13 @@ const DashboardScreen = ({ navigation, route }) => {
   const [frpcLogs, setFrpcLogs] = useState([]);
   const [showLogs, setShowLogs] = useState(false);
   const scrollViewRef = useRef(null);
+
+  // Show ThreatCard when new alert arrives
+  useEffect(() => {
+    if (currentAlert && !isAlertVisible) {
+      setShowThreatCard(true);
+    }
+  }, [currentAlert, isAlertVisible]);
 
   useEffect(() => {
     // Auto-start tunneling on app launch
@@ -37,6 +45,9 @@ const DashboardScreen = ({ navigation, route }) => {
     
     // Load notifications
     loadNotifications();
+    
+    // Start alert monitoring
+    startAlertMonitoring();
     
     // Setup FRPC log listener
     const logUnsubscribe = CameraTunnelService.onFRPCLog((log) => {
@@ -163,7 +174,7 @@ const DashboardScreen = ({ navigation, route }) => {
   };
 
   const handleCloseSecurityAlert = () => {
-    setShowSecurityAlert(false);
+    closeAlert();
     setShowThreatCard(true);
     // Auto-scroll to threat card after a short delay
     setTimeout(() => {
@@ -227,7 +238,7 @@ const DashboardScreen = ({ navigation, route }) => {
 
   const handleExpandThreatCard = () => {
     setShowThreatCard(false);
-    setShowSecurityAlert(true);
+    showFullAlert(); // Show SecurityAlertModal when expanding ThreatCard
   };
   const [cameras, setCameras] = useState([]);
   const [notifications, setNotifications] = useState([]);
@@ -333,33 +344,21 @@ const DashboardScreen = ({ navigation, route }) => {
             <View style={styles.alertButtonsContainer}>
               <TouchableOpacity 
                 style={[styles.alertButton, styles.weaponAlertButton]}
-                onPress={() => {
-                  setAlertType('aggression');
-                  setShowSecurityAlert(true);
-                  createNotification('aggression');
-                }}
+                onPress={() => simulateAlert('aggression')}
               >
                 <Ionicons name="warning" size={12} color="#212121" />
               </TouchableOpacity>
               
               <TouchableOpacity 
                 style={[styles.alertButton, styles.intruderAlertButton]}
-                onPress={() => {
-                  setAlertType('weapon');
-                  setShowSecurityAlert(true);
-                  createNotification('weapon');
-                }}
+                onPress={() => simulateAlert('weapon')}
               >
                 <Ionicons name="person" size={12} color="#212121" />
               </TouchableOpacity>
               
               <TouchableOpacity 
                 style={[styles.alertButton, styles.motionAlertButton]}
-                onPress={() => {
-                  setAlertType('fatigue');
-                  setShowSecurityAlert(true);
-                  createNotification('fatigue');
-                }}
+                onPress={() => simulateAlert('fatigue')}
               >
                 <Ionicons name="walk" size={12} color="#212121" />
               </TouchableOpacity>
@@ -466,9 +465,10 @@ const DashboardScreen = ({ navigation, route }) => {
 
         {/* Security Alert Modal */}
         <SecurityAlertModal 
-          visible={showSecurityAlert}
+          visible={isAlertVisible}
           onClose={handleCloseSecurityAlert}
-          alertType={alertType}
+          alertData={currentAlert}
+          alertType={currentAlert?.type || alertType}
         />
 
         {/* My Cameras Section */}
@@ -585,7 +585,8 @@ const DashboardScreen = ({ navigation, route }) => {
                   visible={showThreatCard}
                   onExpand={handleExpandThreatCard}
                   onCancel={() => setShowThreatCard(false)}
-                  alertType={alertType}
+                  alertData={currentAlert}
+                  alertType={currentAlert?.type || alertType}
                 />
                 
                 {/* Add Camera Card */}

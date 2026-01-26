@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const ThreatCard = ({ visible, onExpand, onCancel, alertType = 'aggression' }) => {
+const ThreatCard = ({ visible, onExpand, onCancel, alertData = null, alertType = 'aggression' }) => {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(1)).current;
 
@@ -43,24 +43,28 @@ const ThreatCard = ({ visible, onExpand, onCancel, alertType = 'aggression' }) =
   }, [visible]);
 
   const getAlertInfo = () => {
+    // Use alertData if available, otherwise fallback to alertType
+    const type = alertData?.type || alertType;
+    const confidence = alertData?.confidence || 0.96;
+    
     const alertTypes = {
       aggression: {
-        description: 'Aggression Detected',
+        description: alertData?.title || 'Aggression Detected',
         icon: 'person-circle',
-        percentage: '96%'
+        percentage: `${Math.round(confidence * 100)}%`
       },
       weapon: {
-        description: 'Weapon Detected',
+        description: alertData?.title || 'Weapon Detected',
         icon: 'shield',
-        percentage: '98%'
+        percentage: `${Math.round(confidence * 100)}%`
       },
       fatigue: {
-        description: 'Driver Fatigue Detected',
+        description: alertData?.title || 'Driver Fatigue Detected',
         icon: 'warning',
-        percentage: '85%'
+        percentage: `${Math.round(confidence * 100)}%`
       }
     };
-    return alertTypes[alertType] || alertTypes.aggression;
+    return alertTypes[type] || alertTypes.aggression;
   };
 
   const alertInfo = getAlertInfo();
@@ -92,8 +96,8 @@ const ThreatCard = ({ visible, onExpand, onCancel, alertType = 'aggression' }) =
 
       <View style={styles.content}>
         <View style={styles.mainInfo}>
-          <Text style={styles.title}>Threat</Text>
-          <Text style={styles.description}>{alertInfo.description}</Text>
+          <Text style={styles.title}>{alertInfo.description}</Text>
+          <Text style={styles.description}>{alertData?.location || 'Security Zone'}</Text>
         </View>
         
         <View style={styles.footer}>

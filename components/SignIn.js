@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, Keyboard, TouchableWithoutFeedback, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, Keyboard, TouchableWithoutFeedback, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import CameraSetupModal from './CameraSetupModal';
@@ -35,15 +35,25 @@ export default function SignIn({ navigation }) {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={styles.container}>
-        <LinearGradient
-          colors={['#999999', 'transparent', '#999999']}
-          locations={[0, 0.5, 1]}
-          style={styles.borderGradient}
-        >
-        <View style={styles.cardContainer}>
-        <View style={styles.content}>
+    <KeyboardAvoidingView 
+      style={styles.container} 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="always"
+        bounces={false}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.innerContainer}>
+            <LinearGradient
+              colors={['#999999', 'transparent', '#999999']}
+              locations={[0, 0.5, 1]}
+              style={styles.borderGradient}
+            >
+            <View style={styles.cardContainer}>
+            <View style={styles.content}>
         <View style={styles.logoContainer}>
           <Image source={require('../obex-logo-joined.png')} style={styles.logo} />
         </View>
@@ -96,6 +106,13 @@ export default function SignIn({ navigation }) {
         </TouchableOpacity>
 
         <TouchableOpacity 
+          onPress={() => navigation.navigate('ForgotPassword')}
+          style={styles.forgotPasswordButton}
+        >
+          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
           onPress={() => {
             console.log('Signup button pressed');
             navigation.navigate('SignUp');
@@ -109,6 +126,9 @@ export default function SignIn({ navigation }) {
         </View>
         </View>
         </LinearGradient>
+        </View>
+        </TouchableWithoutFeedback>
+        </ScrollView>
         
         <CameraSetupModal 
           visible={showCameraSetup}
@@ -117,8 +137,7 @@ export default function SignIn({ navigation }) {
             navigation.navigate('Dashboard');
           }}
         />
-      </View>
-    </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
   );
 }
 
@@ -126,9 +145,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000000',
+  },
+  scrollContainer: {
+    flexGrow: 1,
     justifyContent: 'center',
-    alignItems: 'center',
     paddingHorizontal: 24,
+    paddingVertical: 40,
+  },
+  innerContainer: {
+    alignItems: 'center',
   },
   borderGradient: {
     borderRadius: 30,
@@ -249,5 +274,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignSelf: 'center',
     marginTop: 16,
+  },
+  forgotPasswordButton: {
+    alignSelf: 'center',
+    marginTop: 12,
+    paddingVertical: 8,
+  },
+  forgotPasswordText: {
+    color: '#4A9EFF',
+    fontSize: 14,
+    fontWeight: '500',
   }
 });

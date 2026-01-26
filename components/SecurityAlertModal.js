@@ -5,38 +5,44 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const SecurityAlertModal = ({ visible, onClose, alertType = 'aggression' }) => {
+const SecurityAlertModal = ({ visible, onClose, alertData = null, alertType = 'aggression' }) => {
   const [isWeaponDetection, setIsWeaponDetection] = useState(false);
-  const [alertTime] = useState(new Date());
+  const [alertTime] = useState(alertData?.timestamp ? new Date(alertData.timestamp) : new Date());
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
   const getAlertContent = () => {
-    switch (alertType) {
+    // Use alertData if provided, otherwise use alertType
+    const type = alertData?.type || alertType;
+    
+    switch (type) {
       case 'weapon':
         return {
-          title: 'Weapon Detection',
-          description: 'Suspicious weapon-like object identified in monitored area.',
+          title: alertData?.title || 'Weapon Detection',
+          description: alertData?.description || 'Suspicious weapon-like object identified in monitored area.',
           icon: 'shield-outline',
-          location: 'Security checkpoint',
-          camera: 'Security Camera 2'
+          location: alertData?.location || 'Security checkpoint',
+          camera: alertData?.deviceId || 'Security Camera 2',
+          confidence: alertData?.confidence || 0.96
         };
       case 'fatigue':
         return {
-          title: 'Fatigue Detection',
-          description: 'Signs of drowsiness or fatigue detected in subject behavior.',
+          title: alertData?.title || 'Fatigue Detection',
+          description: alertData?.description || 'Signs of drowsiness or fatigue detected in subject behavior.',
           icon: 'eye-off-outline',
-          location: 'Driver monitoring zone',
-          camera: 'Dashboard Camera'
+          location: alertData?.location || 'Driver monitoring zone',
+          camera: alertData?.deviceId || 'Dashboard Camera',
+          confidence: alertData?.confidence || 0.89
         };
       default:
         return {
-          title: 'Aggression Detected',
-          description: 'Aggressive behavior patterns identified in monitored subject.',
+          title: alertData?.title || 'Aggression Detected',
+          description: alertData?.description || 'Aggressive behavior patterns identified in monitored subject.',
           icon: 'warning',
-          location: 'Vehicle front seat',
-          camera: 'Front-door Camera'
+          location: alertData?.location || 'Vehicle front seat',
+          camera: alertData?.deviceId || 'Front-door Camera',
+          confidence: alertData?.confidence || 0.92
         };
     }
   };
@@ -184,7 +190,7 @@ const SecurityAlertModal = ({ visible, onClose, alertType = 'aggression' }) => {
         {/* Threat Level */}
         <View style={styles.threatHeader}>
           <Text style={styles.threatLabel}>Threat Level</Text>
-          <Text style={styles.threatPercentage}>96%</Text>
+          <Text style={styles.threatPercentage}>{Math.round((alertContent.confidence || 0.96) * 100)}%</Text>
         </View>
 
         {/* Progress Bar */}
@@ -193,9 +199,9 @@ const SecurityAlertModal = ({ visible, onClose, alertType = 'aggression' }) => {
             colors={['#4CAF50', '#FDD835', '#FF5722']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={[styles.progressBar, { width: '96%' }]}
+            style={[styles.progressBar, { width: `${(alertContent.confidence || 0.96) * 100}%` }]}
           />
-          <View style={styles.triangleIndicator} />
+          <View style={[styles.triangleIndicator, { left: `${(alertContent.confidence || 0.96) * 92}%` }]} />
         </View>
       </Animated.View>
     </View>

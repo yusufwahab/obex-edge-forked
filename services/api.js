@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE_URL = 'https://obex-edge-backend.onrender.com/api';
+const API_BASE_URL = 'https://obex-edge-backend.onrender.com';
 
 // API Service Class
 class ApiService {
@@ -25,7 +25,8 @@ class ApiService {
       console.log('API Response Data:', data);
       
       if (!response.ok) {
-        throw new Error(data.message || data.detail || 'API request failed');
+        const errorMessage = data.detail || data.message || 'API request failed';
+        throw new Error(errorMessage);
       }
       
       return data;
@@ -40,29 +41,31 @@ class ApiService {
   }
 
   // Authentication APIs
-  async register(userData) {
-    return this.request('/auth/signup', {
+  async signup(userData) {
+    return this.request('/api/v1/auth/signup', {
       method: 'POST',
-      body: JSON.stringify({
-        username: userData.fullName,
-        email: userData.email,
-        phoneNumber: userData.phoneNumber,
-        password: userData.password,
-        confirmPassword: userData.password,
-      }),
+      body: JSON.stringify(userData),
     });
   }
 
   async login(credentials) {
-    return this.request('/auth/login', {
+    return this.request('/api/v1/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
   }
 
-  async logout() {
-    return this.request('/auth/logout', {
+  async generateOTP(email) {
+    return this.request('/api/v1/auth/otp/generate', {
       method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async verifyOTP(email, otp) {
+    return this.request('/api/v1/auth/otp/verify', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp }),
     });
   }
 
@@ -114,17 +117,41 @@ class ApiService {
   }
 
   // Alerts APIs
-  async getAlerts(token) {
-    return this.request('/alerts', {
+  async getRecentAlerts(token, userOnly = false, limit = 50, offset = 0) {
+    return this.request(`/api/v1/alerts/recent?user_only=${userOnly}&limit=${limit}&offset=${offset}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
     });
   }
 
-  async markAlertAsRead(alertId, token) {
-    return this.request(`/alerts/${alertId}/read`, {
-      method: 'PUT',
+  async getAlertStats(token) {
+    return this.request('/api/v1/alerts/stats', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  }
+
+  async getAlertById(alertId, token) {
+    return this.request(`/api/v1/alerts/${alertId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  }
+
+  async getAlertsByType(alertType, token, limit = 100, offset = 0) {
+    return this.request(`/api/v1/alerts/type/${alertType}?limit=${limit}&offset=${offset}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  }
+
+  async deleteAlert(alertId, token) {
+    return this.request(`/api/v1/alerts/${alertId}`, {
+      method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
       },

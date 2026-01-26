@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, Keyboard, TouchableWithoutFeedback, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, Keyboard, TouchableWithoutFeedback, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import CameraSetupModal from './CameraSetupModal';
@@ -10,27 +10,51 @@ export default function SignUp({ navigation }) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [organizationName, setOrganizationName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showCameraSetup, setShowCameraSetup] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSignUp = async () => {
-    if (!fullName || !phoneNumber || !email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+    if (!fullName || !phoneNumber || !email || !password || !confirmPassword) {
+      Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+
+    if (password.length < 8) {
+      Alert.alert('Error', 'Password must be at least 8 characters');
       return;
     }
 
     setLoading(true);
     try {
-      const response = await AuthService.register({
-        fullName,
-        phoneNumber,
+      const signupData = {
+        username: fullName,
         email,
+        phoneNumber,
         password,
-      });
+        confirmPassword,
+        role: "user",
+        isAdmin: false
+      };
 
-      Alert.alert('Success', 'Account created successfully!');
-      setShowCameraSetup(true);
+      if (organizationName.trim()) {
+        signupData.organizationName = organizationName;
+      }
+
+      console.log('Signup data being sent:', signupData);
+
+      const response = await AuthService.register(signupData);
+      Alert.alert('Success', 'Account created successfully!', [
+        { text: 'OK', onPress: () => navigation.navigate('SignIn') }
+      ]);
     } catch (error) {
       Alert.alert('Error', error.message || 'Registration failed');
       console.error('Registration error:', error);
@@ -45,8 +69,18 @@ export default function SignUp({ navigation }) {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={styles.container}>
+    <KeyboardAvoidingView 
+      style={styles.container} 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="always"
+        bounces={false}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.innerContainer}>
         <LinearGradient
           colors={['#999999', 'transparent', '#999999']}
           locations={[0, 0.5, 1]}
@@ -127,6 +161,38 @@ export default function SignUp({ navigation }) {
           </View>
         </View>
 
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Confirm Password</Text>
+          <View style={styles.inputWrapper}>
+            <Ionicons name="lock-closed" size={20} color="#6B7280" style={styles.leftIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Confirm Password"
+              placeholderTextColor="#6B7280"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry={!showConfirmPassword}
+            />
+            <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.rightIcon}>
+              <Ionicons name={showConfirmPassword ? "eye-off" : "eye"} size={20} color="#6B7280" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Organization Name (Optional)</Text>
+          <View style={styles.inputWrapper}>
+            <Ionicons name="business" size={20} color="#6B7280" style={styles.leftIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Enter Organization Name"
+              placeholderTextColor="#6B7280"
+              value={organizationName}
+              onChangeText={setOrganizationName}
+            />
+          </View>
+        </View>
+
         <TouchableOpacity style={[styles.submitButton, loading && styles.submitButtonDisabled]} onPress={handleSignUp} disabled={loading}>
           {loading ? (
             <ActivityIndicator size="small" color="#000000" />
@@ -149,13 +215,15 @@ export default function SignUp({ navigation }) {
         </View>
         </View>
         </LinearGradient>
+        </View>
+        </TouchableWithoutFeedback>
+        </ScrollView>
         
         <CameraSetupModal 
           visible={showCameraSetup}
           onClose={handleCameraSetupClose}
         />
-      </View>
-    </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
   );
 }
 
@@ -163,9 +231,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000000',
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    paddingBottom: 60,
+  },
+  innerContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 24,
   },
   borderGradient: {
     borderRadius: 30,
@@ -176,7 +252,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     padding: 24,
     width: 321,
-    height: 677,
+    minHeight: 750,
   },
   content: {
     width: '100%',
@@ -207,7 +283,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   inputGroup: {
-    marginBottom: 12,
+    marginBottom: 16,
   },
   label: {
     fontSize: 14,
@@ -250,7 +326,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
-    marginTop: 2,
+    marginTop: 32,
     shadowColor: '#FFFFFF',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.3,
@@ -278,6 +354,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: 20,
   }
 });

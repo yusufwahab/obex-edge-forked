@@ -1,11 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, AppState } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, AppState, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 let VLCPlayer;
 try {
-  VLCPlayer = require('react-native-vlc-media-player').VLCPlayer;
-  console.log('VLC Player imported successfully');
+  // Only try to import VLC on Android or in development builds
+  if (Platform.OS === 'android') {
+    VLCPlayer = require('react-native-vlc-media-player').VLCPlayer;
+    console.log('VLC Player imported successfully');
+  } else {
+    console.log('VLC Player skipped on iOS Expo Go');
+    VLCPlayer = null;
+  }
 } catch (error) {
   console.error('VLC Player import failed:', error);
   VLCPlayer = null;
