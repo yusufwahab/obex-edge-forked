@@ -250,6 +250,30 @@ const DashboardScreen = ({ navigation, route }) => {
           </View>
         </View>
 
+        {/* Add Camera Card */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.addCameraCard}
+            onPress={() => navigation.navigate('AddCamera')}
+          >
+            <View style={styles.addCameraIconCircle}>
+              <Ionicons name="add" size={24} color="#4A9EFF" />
+            </View>
+            <View style={styles.addCameraTextContainer}>
+              <Text style={styles.addCameraTitle}>Add Camera</Text>
+              <Text style={styles.addCameraSubtitle}>Scan for ONVIF cameras or enter one manually</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#8B92A7" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.viewCamerasLink}
+            onPress={() => navigation.navigate('Cameras')}
+          >
+            <Text style={styles.viewCamerasLinkText}>View My Cameras</Text>
+            <Ionicons name="chevron-forward" size={14} color="#4A9EFF" />
+          </TouchableOpacity>
+        </View>
+
         {/* Login Success Modal */}
         <LoginSuccessModal 
           visible={showLoginSuccess}
@@ -475,6 +499,35 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
   },
+  addCameraCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(64,64,64,0.7)',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 0.5,
+    borderColor: '#555555',
+  },
+  addCameraIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(74,158,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  addCameraTextContainer: { flex: 1 },
+  addCameraTitle: { color: '#FFFFFF', fontSize: 16, fontWeight: '600', marginBottom: 2 },
+  addCameraSubtitle: { color: '#8B92A7', fontSize: 12 },
+  viewCamerasLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    marginTop: 12,
+  },
+  viewCamerasLinkText: { color: '#4A9EFF', fontSize: 14, fontWeight: '500' },
   bottomNav: {
     position: 'absolute',
     bottom: 0,

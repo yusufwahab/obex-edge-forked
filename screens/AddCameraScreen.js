@@ -31,7 +31,10 @@ const ERROR_MESSAGES = {
 const AddCameraScreen = ({ navigation }) => {
   const { devices, isScanning, error: scanError, startScan } = useCameraDiscovery();
 
+  // step 1 = choose method, step 2 = discover (scan) or manual entry depending on
+  // `method`, step 3 = credentials, step 4 = verify.
   const [step, setStep] = useState(1);
+  const [method, setMethod] = useState(null); // 'scan' | 'manual'
   const [ip, setIp] = useState('');
   const [port, setPort] = useState('80');
   const [name, setName] = useState('');
@@ -45,18 +48,22 @@ const AddCameraScreen = ({ navigation }) => {
   const [verifyError, setVerifyError] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
+  const chooseScan = () => {
+    setMethod('scan');
+    setStep(2);
     startScan();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  };
+
+  const chooseManual = () => {
+    setMethod('manual');
+    setStep(2);
+  };
 
   const selectDevice = (device) => {
     setIp(device.ip);
     setPort(String(device.port));
     setStep(3);
   };
-
-  const goManualEntry = () => setStep(2);
 
   const validateIp = () => IPV4_REGEX.test(ip.trim());
 
@@ -137,6 +144,39 @@ const AddCameraScreen = ({ navigation }) => {
     </View>
   );
 
+  const renderChooseMethodStep = () => (
+    <View style={styles.stepContent}>
+      <Text style={styles.stepTitle}>Add a Camera</Text>
+      <Text style={styles.stepSubtitle}>How would you like to find your camera?</Text>
+
+      <TouchableOpacity style={styles.methodCard} onPress={chooseScan}>
+        <View style={styles.methodIconCircle}>
+          <Ionicons name="wifi" size={28} color="#4A9EFF" />
+        </View>
+        <View style={styles.methodTextContainer}>
+          <Text style={styles.methodTitle}>Scan for Cameras</Text>
+          <Text style={styles.methodSubtitle}>
+            Automatically find ONVIF cameras on this Wi-Fi network.
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color="#8B92A7" />
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.methodCard} onPress={chooseManual}>
+        <View style={styles.methodIconCircle}>
+          <Ionicons name="create-outline" size={28} color="#4A9EFF" />
+        </View>
+        <View style={styles.methodTextContainer}>
+          <Text style={styles.methodTitle}>Enter IP Manually</Text>
+          <Text style={styles.methodSubtitle}>
+            Type in the camera's IP address and port yourself.
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color="#8B92A7" />
+      </TouchableOpacity>
+    </View>
+  );
+
   const renderDiscoverStep = () => (
     <View style={styles.stepContent}>
       <Text style={styles.stepTitle}>Find your camera</Text>
@@ -181,8 +221,18 @@ const AddCameraScreen = ({ navigation }) => {
         </TouchableOpacity>
       )}
 
-      <TouchableOpacity style={styles.secondaryButton} onPress={goManualEntry}>
-        <Text style={styles.secondaryButtonText}>Enter IP Manually</Text>
+      <TouchableOpacity style={styles.secondaryButton} onPress={() => setMethod('manual')}>
+        <Text style={styles.secondaryButtonText}>Enter IP Manually Instead</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.secondaryButton}
+        onPress={() => {
+          setStep(1);
+          setMethod(null);
+        }}
+      >
+        <Text style={styles.secondaryButtonText}>Back</Text>
       </TouchableOpacity>
     </View>
   );
@@ -339,13 +389,13 @@ const AddCameraScreen = ({ navigation }) => {
   );
 
   const canGoNext = () => {
-    if (step === 2) return validateIp();
+    if (step === 2 && method === 'manual') return validateIp();
     if (step === 3) return validateCredentials();
     return true;
   };
 
   const handleNext = () => {
-    if (step === 2) {
+    if (step === 2 && method === 'manual') {
       setStep(3);
       return;
     }
@@ -358,6 +408,7 @@ const AddCameraScreen = ({ navigation }) => {
   const handleBack = () => {
     if (step === 2) {
       setStep(1);
+      setMethod(null);
     } else if (step === 3) {
       setStep(2);
     }
@@ -380,13 +431,14 @@ const AddCameraScreen = ({ navigation }) => {
         {renderProgressDots()}
 
         <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          {step === 1 && renderDiscoverStep()}
-          {step === 2 && renderManualStep()}
+          {step === 1 && renderChooseMethodStep()}
+          {step === 2 && method === 'scan' && renderDiscoverStep()}
+          {step === 2 && method === 'manual' && renderManualStep()}
           {step === 3 && renderCredentialsStep()}
           {step === 4 && renderVerifyStep()}
         </ScrollView>
 
-        {(step === 2 || step === 3) && (
+        {((step === 2 && method === 'manual') || step === 3) && (
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.backButton} onPress={handleBack}>
               <Text style={styles.backButtonText}>Back</Text>
@@ -447,6 +499,28 @@ const styles = StyleSheet.create({
   stepTitle: { fontSize: 24, color: '#FFFFFF', fontWeight: 'bold', marginBottom: 8 },
   stepSubtitle: { fontSize: 14, color: '#8B92A7', marginBottom: 24 },
   centered: { alignItems: 'center', paddingVertical: 40 },
+  methodCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(64,64,64,0.7)',
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 0.5,
+    borderColor: '#555555',
+  },
+  methodIconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(74,158,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  methodTextContainer: { flex: 1 },
+  methodTitle: { color: '#FFFFFF', fontSize: 17, fontWeight: '600', marginBottom: 4 },
+  methodSubtitle: { color: '#8B92A7', fontSize: 13, lineHeight: 18 },
   helperText: { color: '#8B92A7', fontSize: 14, marginTop: 12, textAlign: 'center' },
   errorText: { color: '#FF6B6B', fontSize: 14, marginBottom: 16, textAlign: 'center' },
   deviceRow: {

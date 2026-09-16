@@ -1,54 +1,53 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Video, ResizeMode } from 'expo-av';
 import RTSPPlayer from '../components/RTSPPlayer';
 
+// Per-type copy used only as a fallback when the real alert didn't carry its own
+// location/description (e.g. the Dashboard's demo "simulate alert" buttons, which
+// have no backing alert record at all).
+const ALERT_TYPE_FALLBACKS = {
+  weapon: {
+    title: 'Weapon Detection Alert',
+    location: 'Security Zone',
+    severity: 'Critical',
+    description: 'Weapon detected in monitored area.',
+    actions: 'Security team dispatched, area secured, authorities notified, incident escalated to emergency response.',
+  },
+  fatigue: {
+    title: 'Driver Fatigue Alert',
+    location: 'Driver Seat',
+    severity: 'High',
+    description: 'Driver fatigue detected through behavioral analysis.',
+    actions: 'Driver alerted, safe stopping location suggested, emergency contacts notified.',
+  },
+  aggression: {
+    title: 'Aggressive Passengers Detected',
+    location: 'Vehicle Interior',
+    severity: 'Critical',
+    description: 'Aggressive behavior detected among passengers.',
+    actions: 'Emergency protocols activated, authorities contacted, driver alerted immediately.',
+  },
+};
+
 const HistoryScreen = ({ navigation, route }) => {
-  const { alertType, rtspUrl, recordingUrl, timestamp } = route.params || {};
+  const { alertType, rtspUrl, recordingUrl, location, description, timestamp } = route.params || {};
 
   const getAlertData = () => {
     const alertTime = timestamp ? new Date(timestamp).toLocaleString() : new Date().toLocaleString();
-    
-    if (alertType === 'weapon') {
-      return {
-        title: 'Weapon Detection Alert',
-        details: {
-          location: 'Security Zone',
-          camera: 'Security Alert Camera',
-          timestamp: alertTime,
-          duration: 'Live Feed (30s before alert)',
-          severity: 'Critical',
-          description: 'Weapon detected in monitored area. Showing live RTSP feed from 30 seconds before alert was triggered.',
-          actions: 'Security team dispatched, area secured, authorities notified, incident escalated to emergency response.'
-        }
-      };
-    } else if (alertType === 'fatigue') {
-      return {
-        title: 'Driver Fatigue Alert',
-        details: {
-          location: 'Driver Seat',
-          camera: 'Interior Camera',
-          timestamp: alertTime,
-          duration: 'Live Feed (30s before alert)',
-          severity: 'High',
-          description: 'Driver fatigue detected through behavioral analysis. Showing live RTSP feed from 30 seconds before alert was triggered.',
-          actions: 'Driver alerted, safe stopping location suggested, emergency contacts notified.'
-        }
-      };
-    } else {
-      return {
-        title: 'Aggressive Passengers Detected',
-        details: {
-          location: 'Vehicle Interior',
-          camera: 'Interior Camera',
-          timestamp: alertTime,
-          duration: 'Live Feed (30s before alert)',
-          severity: 'Critical',
-          description: 'Aggressive behavior detected among passengers. Showing live RTSP feed from 30 seconds before alert was triggered.',
-          actions: 'Emergency protocols activated, authorities contacted, driver alerted immediately.'
-        }
-      };
-    }
+    const fallback = ALERT_TYPE_FALLBACKS[alertType] || ALERT_TYPE_FALLBACKS.aggression;
+
+    return {
+      title: fallback.title,
+      details: {
+        location: location || fallback.location,
+        timestamp: alertTime,
+        severity: fallback.severity,
+        description: description || fallback.description,
+        actions: fallback.actions,
+      },
+    };
   };
 
   const alertData = getAlertData();
@@ -76,7 +75,17 @@ const HistoryScreen = ({ navigation, route }) => {
         {/* Video Player */}
         <View style={styles.videoContainer}>
           {recordingUrl ? (
-            <Text style={styles.recordingText}>Recording: {recordingUrl}</Text>
+            // Stitched incident clip uploaded to S3 by the edge device — a finite
+            // video file, not a live stream, so this uses expo-av directly rather
+            // than the VLC/RTSP-oriented RTSPPlayer.
+            <Video
+              source={{ uri: recordingUrl }}
+              style={styles.video}
+              useNativeControls
+              resizeMode={ResizeMode.CONTAIN}
+              isLooping={false}
+              shouldPlay
+            />
           ) : rtspUrl ? (
             <RTSPPlayer
               rtspUrl={rtspUrl}
@@ -94,7 +103,7 @@ const HistoryScreen = ({ navigation, route }) => {
         {/* Details Section */}
         <View style={styles.detailsContainer}>
           <Text style={styles.sectionTitle}>Incident Details</Text>
-          
+
           <View style={styles.detailRow}>
             <Ionicons name="location" size={16} color="#4A9EFF" />
             <Text style={styles.detailLabel}>Location:</Text>
@@ -102,21 +111,9 @@ const HistoryScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.detailRow}>
-            <Ionicons name="videocam" size={16} color="#4A9EFF" />
-            <Text style={styles.detailLabel}>Camera:</Text>
-            <Text style={styles.detailValue}>{alertData.details.camera}</Text>
-          </View>
-
-          <View style={styles.detailRow}>
             <Ionicons name="time" size={16} color="#4A9EFF" />
             <Text style={styles.detailLabel}>Timestamp:</Text>
             <Text style={styles.detailValue}>{alertData.details.timestamp}</Text>
-          </View>
-
-          <View style={styles.detailRow}>
-            <Ionicons name="timer" size={16} color="#4A9EFF" />
-            <Text style={styles.detailLabel}>Duration:</Text>
-            <Text style={styles.detailValue}>{alertData.details.duration}</Text>
           </View>
 
           <View style={styles.descriptionSection}>

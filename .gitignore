@@ -57,3 +57,8 @@ ios/*.xcuserdata
 *.sln
 *.sw?
 package-lock.json
+
+# Obex-Frpc is its own separate git repo (edge-device/Raspberry Pi service),
+# cloned here temporarily — see its README for moving it to its own repo.
+# Ignored so `git add .` never re-stages it as a broken embedded-repo reference.
+Obex-Frpc/

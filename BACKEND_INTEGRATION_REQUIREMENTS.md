@@ -42,6 +42,16 @@ runs a relay itself — it just needs to know whether a camera's assigned relay 
 currently online, and get a stream URL if so. None of this exists today; the current
 `/api/v1/devices/*` endpoints are for vehicles, not relays.
 
+**This is no longer just a spec — a real client is already built and blocked on it.**
+A separate `Obex-Frpc` systemd service (Python, stdlib-only) exists for the
+Raspberry Pi side: it calls `GET {backend}/cameras/{id}/tunnel-config` with a bearer
+device token every 60s, renders the result into `frpc`'s config, and hot-reloads the
+tunnel. It currently targets `obex-edge-backend.onrender.com` (this backend) and will
+404 on every sync cycle until this item ships. Whoever picks this up should treat that
+service's `README.md` and `obex_frpc_sync.py` as the concrete contract to implement
+against — same field names, same auth shape it already assumes
+(`{server_addr, server_port, local_ip, local_port, remote_port, token}`).
+
 **What's needed — new resource, `EdgeDevice`:**
 
 ```
@@ -67,8 +77,34 @@ never a user's JWT):**
 | Method | Path | Purpose |
 |---|---|---|
 | `GET` | `/api/v1/edge-devices/me/cameras` | The Pi asks "which cameras am I responsible for" — lets it self-configure instead of being hand-edited. |
-| `GET` | `/api/v1/cameras/{camera_id}/tunnel-config` | Whatever the relay client needs to connect (relay server address/port, this camera's assigned remote port, shared token) — for cameras owned by the calling device only. |
+| `GET` | `/api/v1/cameras/{camera_id}/tunnel-config` | See exact response shape below — for cameras owned by the calling device only. |
 | `POST` | `/api/v1/edge-devices/me/heartbeat` | Called every 30–60s by the Pi; updates `lastSeenAt`. This single field is what gates every camera's `remoteStreamUrl` — no separate per-camera "is this stream live" flag needed. |
+
+**`tunnel-config` response — naming convention decision needed:** `Obex-Frpc`'s sync
+script already hardcodes **snake_case** field names (it was written against a
+different prototype backend that used that convention):
+
+```
+{
+  "server_addr": "string",
+  "server_port": 7000,
+  "local_ip": "string",     // the camera's LAN IP
+  "local_port": 554,        // the camera's RTSP port
+  "remote_port": 20000,     // this camera's allocated public port on the frps server
+  "token": "string"         // shared frp auth token
+}
+```
+
+Every other endpoint in this API uses camelCase. Pick one and stick to it:
+- **Match this API's convention (camelCase)** — cleaner, but `Obex-Frpc`'s
+  `obex_frpc_sync.py` (`fetch_tunnel_config()`/`render_frpc_toml()`) needs updating to
+  match before it'll work; it's a small, self-contained change since that whole
+  service has zero other dependencies.
+- **Keep snake_case for this one endpoint** — zero client changes needed, at the cost
+  of an inconsistent API surface.
+
+Either is fine — just pick one explicitly rather than let it get built ad hoc and
+discovered as a mismatch at integration time.
 
 **Security requirements (from `pipeline.md`, repeated here since they're easy to
 miss when this gets built incrementally):**

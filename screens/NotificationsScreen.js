@@ -58,7 +58,11 @@ const NotificationsScreen = ({ navigation }) => {
           time: timeAgo(formatted.timestamp),
           unread: !readIds.has(String(formatted.id)),
           alertType: formatted.type,
-          rtspUrl: formatted.videoUrl,
+          // formatted.videoUrl is a stitched clip uploaded to S3 by the edge device,
+          // not a live RTSP stream — goes to History's `recordingUrl` slot, not `rtspUrl`.
+          recordingUrl: formatted.videoUrl,
+          location: formatted.location,
+          description: formatted.description,
           timestamp: formatted.timestamp,
         };
       });
@@ -158,7 +162,9 @@ const NotificationsScreen = ({ navigation }) => {
                   markAsRead(notification);
                   navigation.navigate('History', {
                     alertType: notification.alertType,
-                    rtspUrl: notification.rtspUrl,
+                    recordingUrl: notification.recordingUrl,
+                    location: notification.location,
+                    description: notification.description,
                     timestamp: notification.timestamp
                   });
                 }}
