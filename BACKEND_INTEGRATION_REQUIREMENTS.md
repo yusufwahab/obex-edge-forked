@@ -168,45 +168,184 @@ actually a foreign key) until this exists.
 
 ## 4. User profile / settings persistence
 
-**Why:** `SettingsScreen.js` has ~10 toggles (email/SMS/WhatsApp/push/desktop
-notifications, sound alerts, two-factor auth, session timeout, password expiry, max
-login attempts) with nowhere to save. There's no `/user/profile` or `/settings`
-endpoint in the current API (the mobile app previously had dead code pointing at a
-`/user/profile` path that doesn't exist and was never called — already removed
-client-side).
+**Why:** `SettingsScreen.js` has four panels — Profile, Notification Preferences,
+Security Settings, System Information — none of which persist anywhere. There's no
+`/user/profile` or `/settings` endpoint in the current API (the mobile app previously
+had dead code pointing at a `/user/profile` path that doesn't exist and was never
+called — already removed client-side).
 
-**What's needed:**
+### 4a. Profile Settings panel
+
+Currently hardcoded: username "AdminUser", email "admin@obex.com", role
+"Administrator", timezone "UTC", language "English". The "Edit profile" button has no
+handler at all yet.
 
 ```
-GET  /api/v1/users/me/settings   → { message, data: { <the ~10 fields above> } }
-PUT  /api/v1/users/me/settings   → same body to update
+GET /api/v1/users/me/profile
+
+→ 200 {
+  "message": "Profile retrieved",
+  "data": {
+    "username": "string",
+    "email": "string",
+    "role": "string",         // read-only, presumably derived from UserResponse.role
+    "timezone": "string",     // IANA name, e.g. "Africa/Lagos"
+    "language": "string"      // e.g. "en"
+  }
+}
 ```
 
-Scoped to the authenticated user (from the bearer token), not a path param — no
+```
+PUT /api/v1/users/me/profile
+Body: { "username"?: "string", "timezone"?: "string", "language"?: "string" }
+     — email/role presumably not user-editable here; confirm
+
+→ 200 { "message": "Profile updated", "data": { <same shape as GET> } }
+```
+
+### 4b. Notification Preferences + Security Settings panels
+
+Currently six notification toggles (email/SMS/WhatsApp/push/desktop/sound) and four
+security fields (2FA toggle, session timeout minutes, password expiry days, max login
+attempts) — all local `useState`, reset on every app restart.
+
+```
+GET /api/v1/users/me/settings
+
+→ 200 {
+  "message": "Settings retrieved",
+  "data": {
+    "notifications": {
+      "email": true,
+      "sms": true,
+      "whatsapp": true,
+      "push": true,
+      "desktop": true,
+      "soundAlerts": true
+    },
+    "security": {
+      "twoFactorAuth": true,
+      "sessionTimeoutMinutes": 30,
+      "passwordExpiryDays": 90,
+      "maxLoginAttempts": 5
+    }
+  }
+}
+```
+
+```
+PUT /api/v1/users/me/settings
+Body: partial or full { "notifications"?: {...}, "security"?: {...} } — merge semantics
+      preferred (only send/update the keys that changed) over full-replace
+
+→ 200 { "message": "Settings updated", "data": { <same shape as GET> } }
+```
+
+Both scoped to the authenticated user from the bearer token, not a path param — no
 ownership-check ambiguity possible.
 
+### 4c. System Information panel
+
+Currently **entirely fabricated** — "OBEX v2.1.0", a hardcoded date, "Connected",
+"Active", "2.4GB / 10GB", "99.9%" uptime — none of it reflects anything real. If this
+panel is meant to show genuine infra status:
+
+```
+GET /api/v1/system/status   (likely no auth needed, or any authenticated user)
+
+→ 200 {
+  "message": "System status",
+  "data": {
+    "appVersion": "string",
+    "lastUpdated": "2026-01-01T00:00:00Z",
+    "databaseStatus": "connected" | "degraded" | "down",
+    "apiStatus": "active" | "degraded" | "down",
+    "storageUsedBytes": 0,
+    "storageTotalBytes": 0,
+    "uptimePercent": 99.9
+  }
+}
+```
+
+If this is meant to be aspirational/marketing rather than a real infra dashboard,
+that's a valid answer too — just confirm, since right now it silently claims to be
+live data when none of it is.
+
 ---
 
-## 5. Device/system health monitoring
+## 5. Device/camera health telemetry
 
-**Why:** `DeviceHealthScreen.js` is currently fully static (hardcoded "50%" system
-health, etc.). There's no equivalent of uptime/connectivity/battery/heartbeat for
-anything in the current API — **note this is a different concept from both the
-vehicle `devices` API and the edge-device relay in item 1** — clarify with the mobile
-team which of these (if any) "device health" is actually meant to monitor before
-building this, since the screen name is ambiguous. Two plausible interpretations:
+**Why:** `DeviceHealthScreen.js` is currently fully static — hardcoded overall health
+percentage, and per-camera battery %, signal strength %, storage used %, "last seen",
+and online/offline status for two fake cameras ("Front-door Camera", "Back-yard
+Camera"). **This is a third, distinct "device" concept** — separate from both the
+vehicle `devices` API and the edge-device relay in item 1. Confirm with the mobile
+team what this is actually meant to monitor before building it — most likely reading
+is per-*camera* hardware telemetry (the camera unit's own battery/signal/storage, if
+it's a battery/Wi-Fi powered unit), not the relay or the vehicle.
 
-- **Edge-device liveness** — if this is what it means, item 1's `lastSeenAt` heartbeat
-  already covers it; no new endpoint needed, just expose it via
-  `GET /api/v1/edge-devices/{id}` (already planned above).
-- **Something else entirely** (app health, ML model health) — if so, this needs its
-  own spec; `GET /api/v1/model-logs/summary` (already live) gives log-level counts
-  that could partially back a "system status" indicator, but that's AI-model
-  diagnostics, not device health, and shouldn't be silently relabeled as such.
+**Recommended shape — embed on `CameraData` directly** rather than a separate
+per-camera endpoint, so the existing `GET /api/v1/cameras/` list call can populate
+this whole screen in one round trip instead of N+1 calls:
+
+```
+CameraData now also includes:
+  "health": {
+    "status": "online" | "offline",
+    "healthPercent": 98,            // overall composite score shown in the ring UI
+    "batteryPercent": 85,           // null if the camera is mains-powered / not applicable
+    "signalStrengthPercent": 92,
+    "storageUsedPercent": 50,
+    "lastSeenAt": "2026-01-01T00:00:00Z"
+  }
+}
+```
+
+If per-camera telemetry isn't something your cameras can actually report (e.g. dumb
+ONVIF cameras with no such API), that's worth saying explicitly too — in which case
+this screen may need to be scoped down to just online/offline + last-seen (derivable
+from something like a periodic ping/heartbeat) rather than fabricated battery/signal
+numbers.
+
+If it turns out this screen actually meant **edge-device liveness** instead, no new
+endpoint is needed — item 1's `lastSeenAt` heartbeat already covers that, just expose
+it via `GET /api/v1/edge-devices/{id}`.
 
 ---
 
-## 6. Formalize `AlertStatsResponse.data`'s shape
+## 6. Analytics "Avg. Response" performance metric
+
+**Why:** `AnalyticsScreen.js`'s metrics grid had a hardcoded "1.2s" for "Avg.
+Response" — changed client-side to show "N/A" rather than keep displaying fabricated
+data, since nothing in the API backs a response-time figure.
+
+**Ask:** clarify what "response" is meant to measure before speccing this — two very
+different things could be meant:
+- **Detection latency** — time from an event happening to the alert being submitted
+  (`POST /api/v1/alerts/submit`) — an ML-pipeline/edge-device metric.
+- **Acknowledgment latency** — time from an alert being submitted to a user
+  viewing/dismissing it in the app — a human-response metric, would need the app to
+  report back when an alert is opened (a new event, not currently sent anywhere).
+
+Strawman shape if it's the former (likely simpler, since it only needs
+already-submitted alert data, no new client event):
+
+```
+GET /api/v1/alerts/response-time-stats?windowHours=24
+
+→ 200 {
+  "message": "Response time stats",
+  "data": {
+    "avgResponseTimeMs": 1200,
+    "sampleSize": 340,
+    "windowHours": 24
+  }
+}
+```
+
+---
+
+## 7. Formalize `AlertStatsResponse.data`'s shape
 
 **Why:** In the live schema, `GET /api/v1/alerts/stats` types its `data` field as an
 open `object` (`additionalProperties: true`) — there's no documented shape for what
@@ -222,7 +361,7 @@ list (which is not accurate at any real scale).
 
 ---
 
-## 7. Confirm the alerts WebSocket endpoint
+## 8. Confirm the alerts WebSocket endpoint
 
 **Why:** The mobile app connects to `wss://obex-edge-backend.onrender.com/alerts/ws/obex?auth_token={token}`
 for live alert push (`services/AlertService.js`). This isn't in the OpenAPI docs —
@@ -235,6 +374,24 @@ unverified from the client side beyond "it was presumably working at some point.
 shape) are still correct and documented somewhere durable, since a plain HTTP probe
 against that path returns 404 either way (inconclusive for a WebSocket-only route) —
 there's no way to confirm liveness from outside a real socket handshake.
+
+---
+
+## Client-side wiring gaps (no backend work needed — informational only)
+
+Found during the same audit, listed here so they're not mistaken for backend asks:
+
+- **`DashboardScreen.js` notification bell badge** — reads an AsyncStorage key that
+  nothing writes to anymore (dead since an earlier cleanup), so the unread badge is
+  always empty. Fix is purely client-side: rewire to `GET /api/v1/alerts/recent`, the
+  same pattern already used in `NotificationsScreen.js`. No backend change needed.
+- **`HistoryScreen.js` incident details** — `location`, `camera`, `description`, and
+  `actions taken` are three hardcoded templates keyed only by alert type
+  (weapon/fatigue/aggression), not the real alert's actual `location`/`alert_data`
+  fields (which already exist in what `GET /api/v1/alerts/recent` returns). Fix is
+  purely client-side: pass the real fields through as route params from
+  `NotificationsScreen.js` instead of re-deriving a canned template. No backend
+  change needed.
 
 ---
 
@@ -257,7 +414,8 @@ there's no way to confirm liveness from outside a real socket handshake.
 | 1. Edge device pairing + heartbeat | Remote camera viewing entirely |
 | 2. Camera schema fields + URL split | Local/remote switching, ONVIF port/profile persistence |
 | 3. Locations | Camera grouping by site (cosmetic until then) |
-| 4. Settings persistence | `SettingsScreen.js` (currently all toggles are inert) |
-| 5. Device health | `DeviceHealthScreen.js` (currently fully static) |
-| 6. Alert stats shape | Analytics accuracy at scale |
-| 7. WebSocket confirmation | Live alert push reliability |
+| 4. Settings persistence (profile, notifications, security, system status) | `SettingsScreen.js` (all four panels currently inert or fabricated) |
+| 5. Device/camera health telemetry | `DeviceHealthScreen.js` (currently fully static) |
+| 6. Response-time metric | `AnalyticsScreen.js`'s "Avg. Response" (currently "N/A") |
+| 7. Alert stats shape | Analytics accuracy at scale |
+| 8. WebSocket confirmation | Live alert push reliability |

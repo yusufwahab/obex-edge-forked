@@ -52,11 +52,18 @@ export default function SignUp({ navigation }) {
 
       console.log('Signup data being sent:', signupData);
 
-      const response = await AuthService.register(signupData);
-      
-      Alert.alert('Success', 'Account created successfully!', [
-        { text: 'OK', onPress: () => navigation.navigate('SignIn') }
-      ]);
+      await AuthService.register(signupData);
+
+      // Account created — send the verification OTP and hand off to the OTP screen.
+      // Best-effort: if sending fails here, the user can still hit "Resend OTP" on
+      // that screen rather than getting stuck on the signup form.
+      try {
+        await AuthService.generateOTP(email);
+      } catch (otpError) {
+        console.error('Failed to send verification OTP:', otpError);
+      }
+
+      navigation.navigate('OTPVerification', { email });
     } catch (error) {
       Alert.alert('Error', error.message || 'Registration failed');
       console.error('Registration error:', error);

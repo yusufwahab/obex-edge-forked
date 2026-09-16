@@ -6,6 +6,7 @@ import LogoLoadingScreen from './components/LogoLoadingScreen';
 import SignIn from './components/SignIn';
 import SignUp from './components/SignUp';
 import ForgotPassword from './components/ForgotPassword';
+import OTPVerification from './components/OTPVerification';
 import OnboardingScreen from './screens/OnboardingScreen';
 import DashboardScreen from './screens/DashboardScreen';
 import AnalyticsScreen from './screens/AnalyticsScreen';
@@ -38,6 +39,7 @@ export default function App() {
         <Stack.Screen name="SignIn" component={SignIn} />
         <Stack.Screen name="SignUp" component={SignUp} />
         <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+        <Stack.Screen name="OTPVerification" component={OTPVerification} />
         <Stack.Screen name="Dashboard" component={DashboardScreen} />
         <Stack.Screen name="Analytics" component={AnalyticsScreen} />
         <Stack.Screen name="DeviceHealth" component={DeviceHealthScreen} />
