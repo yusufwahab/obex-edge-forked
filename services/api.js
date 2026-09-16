@@ -77,28 +77,12 @@ class ApiService {
     });
   }
 
-  // User APIs
-  async getUserProfile(token) {
-    return this.request('/user/profile', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-  }
-
-  async updateProfile(userData, token) {
-    return this.request('/user/profile', {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(userData),
-    });
-  }
-
-  // Camera APIs
-  async getCameras(token) {
-    return this.request('/cameras', {
+  // Camera APIs — matches the live OpenAPI schema at /openapi.json (CameraCreate/
+  // CameraUpdate/CameraData). Note: the real backend has no locationId, edgeDeviceId,
+  // onvifPort, profileToken, or local/remote URL split — see AddCameraScreen.js for
+  // what's actually sent, and the integration gap report for what's missing.
+  async getCameras(token, userOnly = false, limit = 50, offset = 0) {
+    return this.request(`/api/v1/cameras/?user_only=${userOnly}&limit=${limit}&offset=${offset}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -106,17 +90,16 @@ class ApiService {
   }
 
   async getCameraById(cameraId, token) {
-    return this.request(`/cameras/${cameraId}`, {
+    return this.request(`/api/v1/cameras/${cameraId}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
     });
   }
 
-  // cameraData: { name, locationId, edgeDeviceId, ip, onvifPort, username, password,
-  // rtspPath, localPort, profileToken }
+  // cameraData: { cameraName, ipAddress, username, password, port, path }
   async addCamera(cameraData, token) {
-    return this.request('/cameras', {
+    return this.request('/api/v1/cameras/create', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -126,8 +109,8 @@ class ApiService {
   }
 
   async updateCamera(cameraId, cameraData, token) {
-    return this.request(`/cameras/${cameraId}`, {
-      method: 'PATCH',
+    return this.request(`/api/v1/cameras/${cameraId}`, {
+      method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -136,8 +119,29 @@ class ApiService {
   }
 
   async deleteCamera(cameraId, token) {
-    return this.request(`/cameras/${cameraId}`, {
+    return this.request(`/api/v1/cameras/${cameraId}`, {
       method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  }
+
+  // Device APIs — these are VEHICLE devices (deviceId, vehicleMake, vehicleModel) per
+  // the live schema, not edge/relay devices. Not currently wired to any screen — see
+  // the integration gap report.
+  async registerDevice(deviceData, token) {
+    return this.request('/api/v1/devices/register', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(deviceData),
+    });
+  }
+
+  async getDevices(token, userOnly = false, limit = 50, offset = 0) {
+    return this.request(`/api/v1/devices/?user_only=${userOnly}&limit=${limit}&offset=${offset}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -186,22 +190,9 @@ class ApiService {
     });
   }
 
-  // Analytics APIs
-  async getAnalytics(token, timeRange = '7d') {
-    return this.request(`/analytics?range=${timeRange}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-  }
-
-  // Device Health APIs
-  async getDeviceHealth(token) {
-    return this.request('/devices/health', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+  // Alert supported types (used to drive UI without hardcoding alert type strings)
+  async getSupportedAlertTypes() {
+    return this.request('/api/v1/alerts/supported-types');
   }
 }
 

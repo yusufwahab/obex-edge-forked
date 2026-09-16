@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -22,8 +23,9 @@ const CamerasScreen = ({ navigation }) => {
     setError(null);
     try {
       const token = await AuthService.getToken();
+      // GET /api/v1/cameras/ returns { message, data: [CameraData], total }
       const result = await ApiService.getCameras(token);
-      setCameras(Array.isArray(result) ? result : result?.cameras || []);
+      setCameras(Array.isArray(result?.data) ? result.data : []);
     } catch (e) {
       setError(e.message || 'Failed to load cameras');
     } finally {
@@ -37,6 +39,25 @@ const CamerasScreen = ({ navigation }) => {
     }, [loadCameras])
   );
 
+  const handleDelete = (camera) => {
+    Alert.alert('Delete Camera', `Remove "${camera.cameraName}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const token = await AuthService.getToken();
+            await ApiService.deleteCamera(camera.id, token);
+            loadCameras();
+          } catch (e) {
+            Alert.alert('Delete failed', e.message || 'Could not delete this camera');
+          }
+        },
+      },
+    ]);
+  };
+
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={styles.row}
@@ -44,9 +65,12 @@ const CamerasScreen = ({ navigation }) => {
     >
       <Ionicons name="videocam" size={24} color="#4A9EFF" />
       <View style={styles.rowText}>
-        <Text style={styles.rowName}>{item.name}</Text>
-        <Text style={styles.rowMeta}>{item.locationId || 'No location set'}</Text>
+        <Text style={styles.rowName}>{item.cameraName}</Text>
+        <Text style={styles.rowMeta}>{item.locationId || item.ipAddress}</Text>
       </View>
+      <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(item)}>
+        <Ionicons name="trash" size={18} color="#FF4444" />
+      </TouchableOpacity>
       <Ionicons name="chevron-forward" size={18} color="#8B92A7" />
     </TouchableOpacity>
   );
@@ -129,6 +153,12 @@ const styles = StyleSheet.create({
   rowText: { flex: 1, marginLeft: 12 },
   rowName: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
   rowMeta: { color: '#8B92A7', fontSize: 12, marginTop: 2 },
+  deleteButton: {
+    backgroundColor: 'rgba(255, 68, 68, 0.2)',
+    borderRadius: 16,
+    padding: 6,
+    marginRight: 8,
+  },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
   errorText: { color: '#FF6B6B', fontSize: 14, marginBottom: 16, textAlign: 'center' },
   emptyTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '600', marginTop: 16, marginBottom: 16 },

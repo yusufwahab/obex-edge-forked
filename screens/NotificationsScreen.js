@@ -1,28 +1,95 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
+import AlertService from '../services/AlertService';
+
+const READ_IDS_KEY = 'read_alert_ids';
+
+const ALERT_ICONS = {
+  aggression: { icon: 'person', color: '#C4C44A' },
+  weapon: { icon: 'shield', color: '#FF4500' },
+  fatigue: { icon: 'warning', color: '#FF0000' },
+};
+
+function timeAgo(isoString) {
+  if (!isoString) return '';
+  const diffMs = Date.now() - new Date(isoString).getTime();
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
 
 const NotificationsScreen = ({ navigation }) => {
   const [filter, setFilter] = useState('all');
   const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const insets = useSafeAreaInsets();
-  
-  useEffect(() => {
-    loadNotifications();
-  }, []);
-  
-  const loadNotifications = async () => {
+
+  const loadNotifications = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const storedNotifications = await AsyncStorage.getItem('notifications');
-      if (storedNotifications) {
-        setNotifications(JSON.parse(storedNotifications));
-      }
-    } catch (error) {
-      console.error('Failed to load notifications:', error);
+      const [result, readIdsRaw] = await Promise.all([
+        AlertService.getRecentAlerts(50, 0),
+        AsyncStorage.getItem(READ_IDS_KEY),
+      ]);
+      const readIds = new Set(readIdsRaw ? JSON.parse(readIdsRaw) : []);
+      const rawAlerts = Array.isArray(result?.data) ? result.data : [];
+
+      const items = rawAlerts.map((raw) => {
+        const formatted = AlertService.formatAlert(raw);
+        const iconInfo = ALERT_ICONS[formatted.type] || ALERT_ICONS.aggression;
+        return {
+          id: String(formatted.id),
+          icon: iconInfo.icon,
+          iconColor: iconInfo.color,
+          type: formatted.title,
+          message: formatted.description,
+          time: timeAgo(formatted.timestamp),
+          unread: !readIds.has(String(formatted.id)),
+          alertType: formatted.type,
+          rtspUrl: formatted.videoUrl,
+          timestamp: formatted.timestamp,
+        };
+      });
+
+      setNotifications(items);
+    } catch (e) {
+      setError(e.message || 'Failed to load notifications');
+    } finally {
+      setLoading(false);
     }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadNotifications();
+    }, [loadNotifications])
+  );
+
+  const markAsRead = async (notification) => {
+    const updated = notifications.map((n) =>
+      n.id === notification.id ? { ...n, unread: false } : n
+    );
+    setNotifications(updated);
+    const readIds = updated.filter((n) => !n.unread).map((n) => n.id);
+    await AsyncStorage.setItem(READ_IDS_KEY, JSON.stringify(readIds));
+  };
+
+  const markAllRead = async () => {
+    const updated = notifications.map((n) => ({ ...n, unread: false }));
+    setNotifications(updated);
+    await AsyncStorage.setItem(READ_IDS_KEY, JSON.stringify(updated.map((n) => n.id)));
   };
 
   return (
@@ -34,20 +101,20 @@ const NotificationsScreen = ({ navigation }) => {
             <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
           <Text style={styles.title}>Notifications</Text>
-          <TouchableOpacity style={styles.clearButton}>
-            <Text style={styles.clearText}>Clear All</Text>
+          <TouchableOpacity style={styles.clearButton} onPress={markAllRead}>
+            <Text style={styles.clearText}>Mark All Read</Text>
           </TouchableOpacity>
         </View>
 
         {/* Filter Buttons */}
         <View style={styles.filterContainer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.filterButton, filter === 'all' && styles.activeFilter]}
             onPress={() => setFilter('all')}
           >
             <Text style={[styles.filterText, filter === 'all' && styles.activeFilterText]}>All</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.filterButton, filter === 'unread' && styles.activeFilter]}
             onPress={() => setFilter('unread')}
           >
@@ -64,54 +131,71 @@ const NotificationsScreen = ({ navigation }) => {
           />
         </View>
 
-        {/* Notifications List */}
-        <View style={styles.notificationsList}>
-          {notifications
-            .filter(notification => filter === 'all' || (filter === 'unread' && notification.unread))
-            .map((notification) => (
-            <TouchableOpacity 
-              key={notification.id} 
-              style={[styles.notificationItem, notification.unread && styles.unreadItem]}
-              onPress={() => {
-                // Mark notification as read
-                const updatedNotifications = notifications.map(n => 
-                  n.id === notification.id ? { ...n, unread: false } : n
-                );
-                setNotifications(updatedNotifications);
-                AsyncStorage.setItem('notifications', JSON.stringify(updatedNotifications));
-                
-                navigation.navigate('History', { 
-                  alertType: notification.alertType,
-                  rtspUrl: notification.rtspUrl,
-                  timestamp: notification.timestamp
-                });
-              }}
-            >
-              <View style={styles.notificationIcon}>
-                <Ionicons name={notification.icon} size={24} color={notification.iconColor} />
-              </View>
-              <View style={styles.notificationContent}>
-                <Text style={styles.notificationType}>{notification.type}</Text>
-                <Text style={styles.notificationMessage}>{notification.message}</Text>
-                <Text style={styles.notificationTime}>{notification.time}</Text>
-              </View>
-              {notification.unread && <View style={styles.unreadDot} />}
+        {loading && (
+          <View style={styles.centered}>
+            <ActivityIndicator size="large" color="#4A9EFF" />
+          </View>
+        )}
+
+        {!loading && error && (
+          <View style={styles.centered}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={loadNotifications}>
+              <Text style={styles.retryButtonText}>Retry</Text>
             </TouchableOpacity>
-          ))}
-        </View>
+          </View>
+        )}
+
+        {!loading && !error && (
+          <View style={styles.notificationsList}>
+            {notifications
+              .filter((notification) => filter === 'all' || (filter === 'unread' && notification.unread))
+              .map((notification) => (
+              <TouchableOpacity
+                key={notification.id}
+                style={[styles.notificationItem, notification.unread && styles.unreadItem]}
+                onPress={() => {
+                  markAsRead(notification);
+                  navigation.navigate('History', {
+                    alertType: notification.alertType,
+                    rtspUrl: notification.rtspUrl,
+                    timestamp: notification.timestamp
+                  });
+                }}
+              >
+                <View style={styles.notificationIcon}>
+                  <Ionicons name={notification.icon} size={24} color={notification.iconColor} />
+                </View>
+                <View style={styles.notificationContent}>
+                  <Text style={styles.notificationType}>{notification.type}</Text>
+                  <Text style={styles.notificationMessage}>{notification.message}</Text>
+                  <Text style={styles.notificationTime}>{notification.time}</Text>
+                </View>
+                {notification.unread && <View style={styles.unreadDot} />}
+              </TouchableOpacity>
+            ))}
+
+            {notifications.length === 0 && (
+              <View style={styles.centered}>
+                <Ionicons name="notifications-off-outline" size={48} color="#666" />
+                <Text style={styles.emptyText}>No notifications yet</Text>
+              </View>
+            )}
+          </View>
+        )}
 
         <View style={styles.bottomPadding} />
       </ScrollView>
 
       {/* Bottom Navigation */}
       <View style={[styles.bottomNav, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.navItem}
           onPress={() => navigation.navigate('Dashboard')}
         >
           <Ionicons name="apps" size={20} color="#8B92A7" />
         </TouchableOpacity>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.navItem}
           onPress={() => navigation.navigate('Analytics')}
         >
@@ -195,6 +279,16 @@ const styles = StyleSheet.create({
   gradientLine: {
     height: 2,
   },
+  centered: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
+  errorText: { color: '#FF6B6B', fontSize: 14, marginBottom: 16, textAlign: 'center' },
+  retryButton: {
+    backgroundColor: '#4A9EFF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
+  emptyText: { color: '#8B92A7', fontSize: 14, marginTop: 12 },
   notificationsList: {
     paddingHorizontal: 16,
   },

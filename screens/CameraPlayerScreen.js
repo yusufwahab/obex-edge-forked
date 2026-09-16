@@ -12,6 +12,13 @@ function firstThreeOctets(ip) {
   return ip ? ip.split('.').slice(0, 3).join('.') : null;
 }
 
+// Per pipeline.md: the backend is meant to return both `streamUrl` (direct, LAN) and
+// `remoteStreamUrl` (relayed via the camera's edge device) per camera, and the client
+// picks whichever is usable based on whether it's currently on the same /24 as the
+// camera. The live backend does NOT implement this yet — CameraData only has a flat
+// `rtspUrl` (see the integration gap report) — so this falls back to that single URL
+// for both cases until the backend adds the split. No other code changes will be
+// needed here once it does.
 const CameraPlayerScreen = ({ route, navigation }) => {
   const { camera } = route.params || {};
   const [sameNetwork, setSameNetwork] = useState(null); // null = still checking
@@ -40,7 +47,9 @@ const CameraPlayerScreen = ({ route, navigation }) => {
     return () => subscription?.remove();
   }, [computeSameNetwork]);
 
-  const effectiveUrl = sameNetwork ? camera?.streamUrl : camera?.remoteStreamUrl;
+  const effectiveUrl = camera?.streamUrl || camera?.remoteStreamUrl
+    ? (sameNetwork ? camera?.streamUrl : camera?.remoteStreamUrl)
+    : camera?.rtspUrl; // fallback: today's live API only returns this flat field
 
   return (
     <View style={styles.container}>
@@ -49,8 +58,8 @@ const CameraPlayerScreen = ({ route, navigation }) => {
           <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <View style={styles.headerText}>
-          <Text style={styles.title}>{camera?.name || 'Camera'}</Text>
-          <Text style={styles.subtitle}>{camera?.locationId || ''}</Text>
+          <Text style={styles.title}>{camera?.cameraName || camera?.name || 'Camera'}</Text>
+          <Text style={styles.subtitle}>{camera?.locationId || camera?.ipAddress || ''}</Text>
         </View>
       </View>
 

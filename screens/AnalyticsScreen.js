@@ -1,29 +1,89 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import RecentAlertsList from '../components/RecentAlertsList';
+import AlertService from '../services/AlertService';
+import ApiService from '../services/api';
+import AuthService from '../services/auth';
+
+// Hour-of-day buckets, computed from real alert timestamps (not a real 24h axis
+// unless /alerts/recent happens to span a full day — see the integration gap report
+// on why this is an approximation rather than a true time-series endpoint).
+function bucketAlertsByHour(alerts) {
+  const buckets = new Array(7).fill(0); // matches the 4-hour-wide x-axis labels below
+  alerts.forEach((a) => {
+    if (!a.timestamp) return;
+    const hour = new Date(a.timestamp).getHours();
+    const bucketIndex = Math.min(6, Math.floor(hour / 4));
+    buckets[bucketIndex] += 1;
+  });
+  return buckets;
+}
 
 const AnalyticsScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [activeFilter, setActiveFilter] = useState('7 Days');
+  const [totalEvents, setTotalEvents] = useState(null);
+  const [alertsToday, setAlertsToday] = useState(null);
+  const [activeCameras, setActiveCameras] = useState(null);
+  const [hourlyBuckets, setHourlyBuckets] = useState(null);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      let cancelled = false;
+      (async () => {
+        try {
+          const token = await AuthService.getToken();
+          const [alertsResult, camerasResult] = await Promise.all([
+            AlertService.getRecentAlerts(100, 0),
+            ApiService.getCameras(token),
+          ]);
+          if (cancelled) return;
+
+          const rawAlerts = Array.isArray(alertsResult?.data) ? alertsResult.data : [];
+          const formatted = rawAlerts.map((a) => AlertService.formatAlert(a));
+          const today = new Date().toDateString();
+          const todayCount = formatted.filter(
+            (a) => a.timestamp && new Date(a.timestamp).toDateString() === today
+          ).length;
+
+          setTotalEvents(typeof alertsResult?.total === 'number' ? alertsResult.total : formatted.length);
+          setAlertsToday(todayCount);
+          setHourlyBuckets(bucketAlertsByHour(formatted));
+
+          const cameras = Array.isArray(camerasResult?.data) ? camerasResult.data : [];
+          setActiveCameras(
+            typeof camerasResult?.total === 'number' ? camerasResult.total : cameras.length
+          );
+        } catch (e) {
+          console.error('Failed to load analytics data:', e);
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }, [])
+  );
 
   const ActivityTimelineChart = () => {
-    const yAxisLabels = [24, 20, 16, 12, 8, 4, 0];
     const xAxisLabels = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'];
-    const barData = [8, 12, 18, 22, 16, 10, 6];
-    
+    const barData = hourlyBuckets || [0, 0, 0, 0, 0, 0, 0];
+    const maxValue = Math.max(4, ...barData);
+    const yAxisLabels = [6, 5, 4, 3, 2, 1, 0].map((n) => Math.round((n / 6) * maxValue));
+
     return (
       <View style={styles.chartWrapper}>
         <View style={styles.chartYAxis}>
-          {yAxisLabels.map((value) => (
-            <Text key={value} style={styles.yAxisLabel}>{value}</Text>
+          {yAxisLabels.map((value, i) => (
+            <Text key={i} style={styles.yAxisLabel}>{value}</Text>
           ))}
         </View>
         <View style={styles.chartArea}>
           {yAxisLabels.map((value, index) => (
-            <View key={value} style={[styles.gridLine, { top: `${index * 16.67}%` }]} />
+            <View key={index} style={[styles.gridLine, { top: `${index * 16.67}%` }]} />
           ))}
           {xAxisLabels.map((_, index) => (
             <View key={index} style={[styles.verticalGridLine, { left: `${(index / 6) * 100}%` }]} />
@@ -31,7 +91,7 @@ const AnalyticsScreen = ({ navigation }) => {
           <View style={styles.barsContainer}>
             {barData.map((height, index) => (
               <View key={index} style={styles.barWrapper}>
-                <View style={[styles.bar, { height: `${(height / 24) * 100}%` }]} />
+                <View style={[styles.bar, { height: `${(height / maxValue) * 100}%` }]} />
               </View>
             ))}
           </View>
@@ -92,28 +152,28 @@ const AnalyticsScreen = ({ navigation }) => {
             <View style={styles.iconBackground}>
               <Ionicons name="pulse" size={44} color="#4A9EFF" />
             </View>
-            <Text style={styles.metricNumber}>342</Text>
+            <Text style={styles.metricNumber}>{totalEvents ?? '—'}</Text>
             <Text style={styles.metricLabel}>Total Events</Text>
           </View>
           <View style={styles.metricCard}>
             <View style={styles.iconBackground}>
               <Ionicons name="videocam" size={44} color="#4A9EFF" />
             </View>
-            <Text style={styles.metricNumber}>1/2</Text>
-            <Text style={styles.metricLabel}>Active Cameras</Text>
+            <Text style={styles.metricNumber}>{activeCameras ?? '—'}</Text>
+            <Text style={styles.metricLabel}>Registered Cameras</Text>
           </View>
           <View style={styles.metricCard}>
             <View style={styles.iconBackground}>
               <Ionicons name="time" size={44} color="#4A9EFF" />
             </View>
-            <Text style={styles.metricNumber}>1.2s</Text>
+            <Text style={styles.metricNumber}>N/A</Text>
             <Text style={styles.metricLabel}>Avg. Response</Text>
           </View>
           <View style={[styles.metricCard, styles.alertCard]}>
             <View style={styles.iconBackground}>
               <Ionicons name="warning" size={44} color="#FF6B6B" />
             </View>
-            <Text style={styles.metricNumber}>8</Text>
+            <Text style={styles.metricNumber}>{alertsToday ?? '—'}</Text>
             <Text style={[styles.metricLabel, styles.alertLabel]}>Alerts Today</Text>
           </View>
         </View>

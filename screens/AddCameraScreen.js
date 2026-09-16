@@ -93,17 +93,25 @@ const AddCameraScreen = ({ navigation }) => {
     setSaving(true);
     try {
       const token = await AuthService.getToken();
+      // cameraName/ipAddress/username/password/port/path are the live CameraCreate
+      // fields the backend actually persists today. locationId/edgeDeviceId/onvifPort/
+      // profileToken are the pipeline.md fields the backend does NOT support yet — sent
+      // anyway (FastAPI/Pydantic ignores unrecognized fields by default rather than
+      // rejecting the request) so the client is already shaped for the target
+      // architecture and needs no changes once the backend adds them. See the
+      // integration gap report for exactly what backend work this requires.
       await ApiService.addCamera(
         {
-          name: name.trim(),
-          locationId: location.trim(),
-          edgeDeviceId: edgeDeviceId.trim(),
-          ip: ip.trim(),
-          onvifPort: parseInt(port, 10) || 80,
+          cameraName: name.trim(),
+          ipAddress: ip.trim(),
           username: username.trim(),
           password,
-          rtspPath: verifyResult.path,
-          localPort: verifyResult.rtspPort,
+          port: verifyResult.rtspPort,
+          path: verifyResult.path,
+          // --- pipeline.md fields, not yet supported server-side ---
+          locationId: location.trim(),
+          edgeDeviceId: edgeDeviceId.trim(),
+          onvifPort: parseInt(port, 10) || 80,
           profileToken: verifyResult.profileToken,
         },
         token
@@ -236,6 +244,9 @@ const AddCameraScreen = ({ navigation }) => {
           value={location}
           onChangeText={setLocation}
         />
+        <Text style={styles.helpText}>
+          Not yet persisted by the backend — sent anyway, pending a locations API.
+        </Text>
       </View>
 
       <View style={styles.inputContainer}>
@@ -248,7 +259,8 @@ const AddCameraScreen = ({ navigation }) => {
           onChangeText={setEdgeDeviceId}
           autoCapitalize="none"
         />
-        {/* TODO(edge-device-pairing): replace with a device picker once GET /devices exists. */}
+        {/* TODO(edge-device-pairing): replace with a device picker once the backend
+            has an edge-device pairing/registration API (see pipeline.md). */}
         <Text style={styles.helpText}>Ask your installer for this ID if you don't have it yet.</Text>
       </View>
 
