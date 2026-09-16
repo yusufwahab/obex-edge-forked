@@ -97,45 +97,6 @@ android {
         multiDexEnabled true
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
-        
-        // Allow binary execution and Android 11+ compatibility
-        manifestPlaceholders = [
-            'allowBackup': 'true',
-            'requestLegacyExternalStorage': 'true',
-            'preserveLegacyExternalStorage': 'true'
-        ]
-        
-        // Android 11+ security configurations
-        if (rootProject.ext.targetSdkVersion >= 30) {
-            manifestPlaceholders['android:extractNativeLibs'] = 'true'
-            manifestPlaceholders['android:allowNativeHeapPointerTagging'] = 'false'
-        }
-        
-        ndk {
-            abiFilters 'arm64-v8a'
-        }
-        
-        // Native library configuration
-        sourceSets {
-            main {
-                jniLibs.srcDirs = ['src/main/jniLibs']
-            }
-        }
-        
-        // CMake configuration for JNI wrapper (fallback method)
-        externalNativeBuild {
-            cmake {
-                cppFlags "-std=c++17"
-                arguments "-DANDROID_STL=c++_shared"
-            }
-        }
-    }
-    
-    // CMake build configuration
-    externalNativeBuild {
-        cmake {
-            path "src/main/cpp/CMakeLists.txt"
-        }
     }
     signingConfigs {
         debug {

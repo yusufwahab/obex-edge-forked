@@ -8,7 +8,6 @@ android/.idea/
 android/*.iml
 android/local.properties
 obexedge-build.zip
-frpc_backup/
 .expo/
 .vscode/
 *.log

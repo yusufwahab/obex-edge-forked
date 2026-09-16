@@ -12,12 +12,10 @@ import AnalyticsScreen from './screens/AnalyticsScreen';
 import DeviceHealthScreen from './screens/DeviceHealthScreen';
 import NotificationsScreen from './screens/NotificationsScreen';
 import SettingsScreen from './screens/SettingsScreen';
-import LiveStreamScreen from './screens/LiveStreamScreen';
 import HistoryScreen from './screens/HistoryScreen';
-import ServerSetupScreen from './screens/ServerSetupScreen';
-import CameraManagementScreen from './screens/CameraManagementScreen';
-import CameraListScreen from './screens/CameraListScreen';
-import CameraStreamScreen from './screens/CameraStreamScreen';
+import CamerasScreen from './screens/CamerasScreen';
+import AddCameraScreen from './screens/AddCameraScreen';
+import CameraPlayerScreen from './screens/CameraPlayerScreen';
 
 const Stack = createStackNavigator();
 
@@ -45,12 +43,10 @@ export default function App() {
         <Stack.Screen name="DeviceHealth" component={DeviceHealthScreen} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
-        <Stack.Screen name="LiveStream" component={LiveStreamScreen} />
         <Stack.Screen name="History" component={HistoryScreen} />
-        <Stack.Screen name="CameraList" component={CameraListScreen} options={{ headerShown: true, title: 'My Cameras' }} />
-        <Stack.Screen name="ServerSetup" component={ServerSetupScreen} options={{ headerShown: true, title: 'Server Setup' }} />
-        <Stack.Screen name="CameraManagement" component={CameraManagementScreen} options={{ headerShown: true, title: 'Camera Management' }} />
-        <Stack.Screen name="CameraStream" component={CameraStreamScreen} options={{ headerShown: true }} />
+        <Stack.Screen name="Cameras" component={CamerasScreen} />
+        <Stack.Screen name="AddCamera" component={AddCameraScreen} />
+        <Stack.Screen name="CameraPlayer" component={CameraPlayerScreen} />
       </Stack.Navigator>
       <StatusBar style="light" />
     </NavigationContainer>

@@ -17,12 +17,25 @@ try {
   VLCPlayer = null;
 }
 
-const RTSPPlayer = ({ rtspUrl, style, onError, onLoad, showControls = true }) => {
+const RTSPPlayer = ({
+  rtspUrl,
+  style,
+  onError,
+  onLoad,
+  onStopped,
+  showControls = true,
+  paused: externalPaused = false,
+  cachingMs = 150,
+  enableWatchdog = false,
+  watchdogTimeoutMs = 6000,
+}) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isActive, setIsActive] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [remountKey, setRemountKey] = useState(0);
   const vlcRef = useRef(null);
+  const lastProgressRef = useRef(Date.now());
 
   const handleLoadStart = () => {
     console.log('VLC Player: Load started for URL:', rtspUrl);
@@ -35,20 +48,32 @@ const RTSPPlayer = ({ rtspUrl, style, onError, onLoad, showControls = true }) =>
     setLoading(false);
     setError(null);
     setIsPlaying(true);
+    lastProgressRef.current = Date.now();
     onLoad && onLoad(data);
   };
-  
+
   const handlePlaying = () => {
     console.log('VLC Player: Stream is playing');
     setLoading(false);
     setError(null);
     setIsPlaying(true);
+    lastProgressRef.current = Date.now();
   };
-  
+
   const handleBuffering = () => {
     console.log('VLC Player: Stream buffering');
     // Don't show loading during normal buffering
     // setLoading(true);
+  };
+
+  const handleProgress = () => {
+    lastProgressRef.current = Date.now();
+  };
+
+  const handleStopped = () => {
+    console.log('VLC Player: Stream stopped');
+    setIsPlaying(false);
+    onStopped && onStopped();
   };
 
   const handleError = (error) => {
@@ -69,11 +94,33 @@ const RTSPPlayer = ({ rtspUrl, style, onError, onLoad, showControls = true }) =>
     };
     
     const subscription = AppState.addEventListener('change', handleAppStateChange);
-    
+
     return () => {
       subscription?.remove();
     };
   }, [rtspUrl]);
+
+  // Reset the stall tracker whenever the source or a forced remount changes, so a fresh
+  // connection gets the full watchdogTimeoutMs to establish itself before being judged stale.
+  useEffect(() => {
+    lastProgressRef.current = Date.now();
+  }, [rtspUrl, remountKey]);
+
+  // libVLC's onError/onStopped don't reliably fire on a silent relay drop, so track the
+  // last progress tick ourselves and force a full player remount if it goes stale.
+  useEffect(() => {
+    if (!enableWatchdog || externalPaused) return undefined;
+
+    const interval = setInterval(() => {
+      if (Date.now() - lastProgressRef.current > watchdogTimeoutMs) {
+        console.log('RTSPPlayer: stream stalled, forcing remount to reconnect');
+        lastProgressRef.current = Date.now();
+        setRemountKey((key) => key + 1);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [enableWatchdog, externalPaused, watchdogTimeoutMs]);
 
   if (!VLCPlayer) {
     return (
@@ -99,12 +146,13 @@ const RTSPPlayer = ({ rtspUrl, style, onError, onLoad, showControls = true }) =>
       <View style={styles.videoWrapper}>
         {isActive && (
           <VLCPlayer
+            key={remountKey}
             ref={vlcRef}
-            source={{ 
+            source={{
               uri: rtspUrl,
               initOptions: [
-                '--network-caching=150',
-                '--rtsp-caching=150',
+                `--network-caching=${cachingMs}`,
+                `--rtsp-caching=${cachingMs}`,
                 '--no-audio',
                 '--intf=dummy',
                 '--extraintf=http',
@@ -117,8 +165,10 @@ const RTSPPlayer = ({ rtspUrl, style, onError, onLoad, showControls = true }) =>
             onLoad={handleLoad}
             onPlaying={handlePlaying}
             onBuffering={handleBuffering}
+            onProgress={enableWatchdog ? handleProgress : undefined}
+            onStopped={handleStopped}
             onError={handleError}
-            paused={!isActive}
+            paused={!isActive || externalPaused}
             bufferConfig={{
               minBufferMs: 500,
               maxBufferMs: 2000,

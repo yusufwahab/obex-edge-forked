@@ -69,6 +69,14 @@ class ApiService {
     });
   }
 
+  async getUserById(userId, token) {
+    return this.request(`/api/v1/auth/users/${userId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  }
+
   // User APIs
   async getUserProfile(token) {
     return this.request('/user/profile', {
@@ -97,9 +105,29 @@ class ApiService {
     });
   }
 
+  async getCameraById(cameraId, token) {
+    return this.request(`/cameras/${cameraId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  }
+
+  // cameraData: { name, locationId, edgeDeviceId, ip, onvifPort, username, password,
+  // rtspPath, localPort, profileToken }
   async addCamera(cameraData, token) {
     return this.request('/cameras', {
       method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(cameraData),
+    });
+  }
+
+  async updateCamera(cameraId, cameraData, token) {
+    return this.request(`/cameras/${cameraId}`, {
+      method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${token}`,
       },

@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import CameraSetupModal from './CameraSetupModal';
 import AuthService from '../services/auth';
+import ApiService from '../services/api';
 
 export default function SignUp({ navigation }) {
   const [fullName, setFullName] = useState('');
@@ -52,6 +53,7 @@ export default function SignUp({ navigation }) {
       console.log('Signup data being sent:', signupData);
 
       const response = await AuthService.register(signupData);
+      
       Alert.alert('Success', 'Account created successfully!', [
         { text: 'OK', onPress: () => navigation.navigate('SignIn') }
       ]);

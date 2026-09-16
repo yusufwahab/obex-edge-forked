@@ -32,12 +32,12 @@ export const useAlerts = () => {
 
   // Start alert monitoring
   const startAlertMonitoring = useCallback(() => {
-    AlertService.startAlertPolling(5000); // Poll every 5 seconds
+    AlertService.connectToAlerts(); // Connect to WebSocket
   }, []);
 
   // Stop alert monitoring
   const stopAlertMonitoring = useCallback(() => {
-    AlertService.stopAlertPolling();
+    AlertService.disconnect(); // Disconnect WebSocket
   }, []);
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export const useAlerts = () => {
     // Cleanup
     return () => {
       AlertService.removeAlertListener(handleNewAlert);
-      AlertService.stopAlertPolling();
+      AlertService.disconnect();
     };
   }, [handleNewAlert]);
 

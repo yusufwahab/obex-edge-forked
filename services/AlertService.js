@@ -4,8 +4,9 @@ import AuthService from './auth';
 class AlertService {
   constructor() {
     this.alertListeners = [];
-    this.pollingInterval = null;
-    this.lastAlertCheck = new Date();
+    this.websocket = null;
+    this.reconnectAttempts = 0;
+    this.maxReconnectAttempts = 5;
   }
 
   // Add listener for new alerts
@@ -23,55 +24,68 @@ class AlertService {
     this.alertListeners.forEach(callback => callback(alert));
   }
 
-  // Start polling for new alerts
-  async startAlertPolling(intervalMs = 5000) {
-    if (this.pollingInterval) {
-      clearInterval(this.pollingInterval);
-    }
-
-    this.pollingInterval = setInterval(async () => {
-      try {
-        await this.checkForNewAlerts();
-      } catch (error) {
-        console.error('Alert polling error:', error);
-      }
-    }, intervalMs);
-  }
-
-  // Stop polling
-  stopAlertPolling() {
-    if (this.pollingInterval) {
-      clearInterval(this.pollingInterval);
-      this.pollingInterval = null;
-    }
-  }
-
-  // Check for new alerts since last check
-  async checkForNewAlerts() {
+  // Connect to WebSocket alerts
+  async connectToAlerts() {
     try {
       const token = await AuthService.getToken();
-      if (!token) return;
-
-      const response = await ApiService.getRecentAlerts(token, false, 10, 0);
-      
-      if (response.data && response.data.length > 0) {
-        // Filter alerts newer than last check
-        const newAlerts = response.data.filter(alert => {
-          const alertTime = new Date(alert.created_at || alert.timestamp);
-          return alertTime > this.lastAlertCheck;
-        });
-
-        // Notify listeners of new alerts
-        newAlerts.forEach(alert => {
-          this.notifyListeners(this.formatAlert(alert));
-        });
-
-        if (newAlerts.length > 0) {
-          this.lastAlertCheck = new Date();
-        }
+      if (!token) {
+        console.error('No auth token available for WebSocket connection');
+        return;
       }
+
+      const wsUrl = `wss://obex-edge-backend.onrender.com/alerts/ws/obex?auth_token=${token}`;
+      console.log('Connecting to alerts WebSocket:', wsUrl);
+      
+      this.websocket = new WebSocket(wsUrl);
+      
+      this.websocket.onopen = () => {
+        console.log('✅ Connected to alerts WebSocket');
+        this.reconnectAttempts = 0;
+      };
+      
+      this.websocket.onmessage = (event) => {
+        try {
+          const alertData = JSON.parse(event.data);
+          console.log('📢 Received alert:', alertData);
+          const formattedAlert = this.formatAlert(alertData);
+          this.notifyListeners(formattedAlert);
+        } catch (error) {
+          console.error('Error parsing alert message:', error);
+        }
+      };
+      
+      this.websocket.onclose = () => {
+        console.log('❌ WebSocket connection closed');
+        this.attemptReconnect();
+      };
+      
+      this.websocket.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+      
     } catch (error) {
-      console.error('Error checking for new alerts:', error);
+      console.error('Error connecting to alerts WebSocket:', error);
+    }
+  }
+
+  // Attempt to reconnect WebSocket
+  attemptReconnect() {
+    if (this.reconnectAttempts < this.maxReconnectAttempts) {
+      this.reconnectAttempts++;
+      console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
+      setTimeout(() => {
+        this.connectToAlerts();
+      }, 3000 * this.reconnectAttempts); // Exponential backoff
+    } else {
+      console.error('Max reconnection attempts reached');
+    }
+  }
+
+  // Disconnect WebSocket
+  disconnect() {
+    if (this.websocket) {
+      this.websocket.close();
+      this.websocket = null;
     }
   }
 

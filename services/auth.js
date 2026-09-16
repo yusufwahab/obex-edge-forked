@@ -102,6 +102,24 @@ class AuthService {
     await AsyncStorage.setItem(this.ORG_KEY, orgId);
   }
 
+  // Get user profile with full details
+  async getUserProfile() {
+    try {
+      const token = await this.getToken();
+      const userId = await this.getUserId();
+      
+      if (!token || !userId) {
+        throw new Error('No authentication data found');
+      }
+      
+      const userProfile = await ApiService.getUserById(userId, token);
+      await this.saveUser(userProfile);
+      return userProfile;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // Get user data from storage
   async getUser() {
     const userData = await AsyncStorage.getItem(this.USER_KEY);

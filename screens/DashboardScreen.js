@@ -1,16 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import AddCameraModal from '../components/AddCameraModal';
-import RTSPPlayer from '../components/RTSPPlayer';
 import VideoPlayer from '../components/VideoPlayer';
 import { Video } from 'expo-av';
 import SecurityAlertModal from '../components/SecurityAlertModal';
 import ThreatCard from '../components/ThreatCard';
-import CameraTunnelService from '../services/CameraTunnelService';
-import PermissionService from '../services/PermissionService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoginSuccessModal from '../components/LoginSuccessModal';
 import CameraSetupModal from '../components/CameraSetupModal';
@@ -19,14 +15,11 @@ import { useAlerts } from '../hooks/useAlerts';
 const DashboardScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { currentAlert, isAlertVisible, closeAlert, showFullAlert, simulateAlert, startAlertMonitoring } = useAlerts();
-  const [showAddCameraModal, setShowAddCameraModal] = useState(false);
   const [showThreatCard, setShowThreatCard] = useState(false);
   const [showLoginSuccess, setShowLoginSuccess] = useState(route?.params?.showLoginSuccess || false);
   const [showOnboardingCards, setShowOnboardingCards] = useState(false);
   const [showCameraSetup, setShowCameraSetup] = useState(false);
   const [alertType, setAlertType] = useState('aggression');
-  const [frpcLogs, setFrpcLogs] = useState([]);
-  const [showLogs, setShowLogs] = useState(false);
   const scrollViewRef = useRef(null);
 
   // Show ThreatCard when new alert arrives
@@ -37,141 +30,15 @@ const DashboardScreen = ({ navigation, route }) => {
   }, [currentAlert, isAlertVisible]);
 
   useEffect(() => {
-    // Auto-start tunneling on app launch
-    initializeAndStartTunnel();
-    
-    // Load cameras from storage
-    loadCamerasFromStorage();
-    
     // Load notifications
     loadNotifications();
-    
+
+    // Load user profile for dynamic name
+    loadUserProfile();
+
     // Start alert monitoring
     startAlertMonitoring();
-    
-    // Setup FRPC log listener
-    const logUnsubscribe = CameraTunnelService.onFRPCLog((log) => {
-      console.log('FRPC Log:', log);
-      setFrpcLogs(prev => {
-        const newLogs = [...prev, { timestamp: new Date().toLocaleTimeString(), message: log }];
-        return newLogs.slice(-50); // Keep last 50 logs
-      });
-    });
-    
-    return () => {
-      logUnsubscribe && logUnsubscribe();
-    };
   }, []);
-  
-  const initializeAndStartTunnel = async () => {
-    try {
-      console.log('🚀 Initializing FRPC tunnel...');
-      
-      // Request permissions first
-      console.log('🔐 Requesting permissions...');
-      const permissionsGranted = await PermissionService.requestAllPermissions();
-      if (!permissionsGranted) {
-        console.warn('⚠️ Some permissions denied, continuing with limited functionality');
-      }
-      
-      // Install FRPC binary first
-      console.log('💾 Installing FRPC binary...');
-      try {
-        const { NativeModules } = require('react-native');
-        if (NativeModules.FRPCModule && NativeModules.FRPCModule.installFRPCBinary) {
-          const binaryPath = await NativeModules.FRPCModule.installFRPCBinary();
-          console.log('✅ FRPC binary installed at:', binaryPath);
-        }
-      } catch (installError) {
-        console.error('❌ FRPC binary installation failed:', installError.message);
-        throw new Error('Binary installation failed: ' + installError.message);
-      }
-      
-      // Save default FRPS config if not exists
-      const existingConfig = await CameraTunnelService.loadFRPSConfig();
-      if (!existingConfig) {
-        console.log('📝 Creating default FRPS config...');
-        await CameraTunnelService.saveFRPSConfig(
-          'staging.ai.avzdax.com',
-          7000,
-          '30PWz5yr0zf7lUALdMauzcxsHs5_3y1BfJdrVJVV8aVAzteNf'
-        );
-        console.log('✅ Default FRPS config created');
-      } else {
-        console.log('✅ FRPS config already exists');
-      }
-      
-      // Add default camera if no cameras exist
-      const existingCameras = await CameraTunnelService.getCameras();
-      console.log(`✅ Found ${existingCameras.length} existing cameras`);
-      
-      // Run diagnostics first
-      console.log('🔍 Running FRPC diagnostics...');
-      try {
-        const { NativeModules } = require('react-native');
-        if (NativeModules.FRPCModule && NativeModules.FRPCModule.runComprehensiveDiagnostics) {
-          const diagnostics = await NativeModules.FRPCModule.runComprehensiveDiagnostics();
-          console.log('📊 FRPC Diagnostics:', diagnostics);
-          
-          if (diagnostics.issues && diagnostics.issues.length > 0) {
-            console.warn('⚠️ FRPC Issues found:', diagnostics.issues);
-          }
-          if (diagnostics.warnings && diagnostics.warnings.length > 0) {
-            console.warn('⚠️ FRPC Warnings:', diagnostics.warnings);
-          }
-        }
-      } catch (diagError) {
-        console.error('❌ Diagnostics failed:', diagError.message);
-      }
-      
-      // Test binary execution
-      console.log('🧪 Testing FRPC binary execution...');
-      try {
-        const { NativeModules } = require('react-native');
-        if (NativeModules.FRPCModule && NativeModules.FRPCModule.testFRPCExecution) {
-          const testResult = await NativeModules.FRPCModule.testFRPCExecution();
-          console.log('🧪 Binary test result:', testResult);
-        }
-      } catch (testError) {
-        console.error('❌ Binary test failed:', testError.message);
-      }
-      
-      // Start tunnel automatically
-      console.log('🔄 Starting FRPC tunnel...');
-      const result = await CameraTunnelService.setupAndStart();
-      console.log('🎯 Auto-start tunnel result:', result);
-      
-      if (result.success) {
-        console.log('🎉 FRPC tunnel started successfully!');
-      } else {
-        console.error('❌ FRPC tunnel failed to start:', result.message);
-        
-        // Additional debugging for binary issues
-        try {
-          const { NativeModules } = require('react-native');
-          if (NativeModules.FRPCModule && NativeModules.FRPCModule.checkBinaryPermissions) {
-            const permissions = await NativeModules.FRPCModule.checkBinaryPermissions();
-            console.log('🔐 Binary permissions:', permissions);
-          }
-        } catch (permError) {
-          console.error('❌ Permission check failed:', permError.message);
-        }
-        
-        // Show user-friendly message
-        console.log('📝 Note: FRPC auto-start failed. This is common in development builds.');
-        console.log('📝 Try using a preview or production build for full FRPC functionality.');
-        console.log('📝 You can still test manually from the Live Stream screen.');
-      }
-      
-    } catch (error) {
-      console.error('💥 Failed to auto-start tunnel:', error);
-      console.error('Error details:', error.message);
-      
-      // Don't crash the app, just log the error
-      console.log('📝 App will continue without FRPC auto-start');
-      console.log('📝 Manual tunnel control available in Live Stream screen');
-    }
-  };
 
   const handleCloseSecurityAlert = () => {
     closeAlert();
@@ -210,8 +77,7 @@ const DashboardScreen = ({ navigation, route }) => {
       time: 'Just now',
       timestamp: new Date().toISOString(),
       unread: true,
-      alertType,
-      rtspUrl: cameras.length > 0 ? cameras[0].rtspUrl : null
+      alertType
     };
 
     try {
@@ -236,99 +102,32 @@ const DashboardScreen = ({ navigation, route }) => {
     }
   };
 
+  const loadUserProfile = async () => {
+    try {
+      const AuthService = require('../services/auth').default;
+      const userProfile = await AuthService.getUserProfile();
+      setUserName(userProfile.username || userProfile.email || 'User');
+    } catch (error) {
+      console.error('Failed to load user profile:', error);
+      // Try to get cached user data
+      try {
+        const AuthService = require('../services/auth').default;
+        const cachedUser = await AuthService.getUser();
+        if (cachedUser) {
+          setUserName(cachedUser.username || cachedUser.email || 'User');
+        }
+      } catch (cacheError) {
+        console.error('Failed to load cached user:', cacheError);
+      }
+    }
+  };
+
   const handleExpandThreatCard = () => {
     setShowThreatCard(false);
     showFullAlert(); // Show SecurityAlertModal when expanding ThreatCard
   };
-  const [cameras, setCameras] = useState([]);
   const [notifications, setNotifications] = useState([]);
-  // Commented out existing cameras
-  // const [cameras, setCameras] = useState([
-  //   {
-  //     id: 1,
-  //     name: 'Front-door Camera',
-  //     location: 'Main Entrance',
-  //     rtspUrl: null,
-  //     isOnline: true
-  //   },
-  //   {
-  //     id: 2,
-  //     name: 'John Vehicle Cam',
-  //     location: 'Garden Area',
-  //     rtspUrl: null,
-  //     isOnline: true,
-  //     hasWeaponDetection: true
-  //   },
-  //   {
-  //     id: 3,
-  //     name: 'Security Alert Camera',
-  //     location: 'Weapon Detection Zone',
-  //     rtspUrl: null,
-  //     isOnline: true,
-  //     hasWeaponDetection: true,
-  //     isAlert: true
-  //   }
-  // ]);
-
-  const loadCamerasFromStorage = async () => {
-    try {
-      const storedCameras = await CameraTunnelService.getCameras();
-      const formattedCameras = storedCameras.map(cam => ({
-        id: cam.id,
-        name: cam.name,
-        location: 'Camera Location',
-        rtspUrl: `rtsp://${cam.username || 'admin'}:${cam.password || 'Admin1234'}@${cam.localIP || 'staging.ai.avzdax.com'}:${cam.localPort || 557}/${cam.streamPath || '1/1'}`,
-        isOnline: true,
-        isPlaying: false
-      }));
-      setCameras(formattedCameras);
-    } catch (error) {
-      console.error('Failed to load cameras:', error);
-    }
-  };
-  
-  const handlePlayCamera = (cameraId) => {
-    const camera = cameras.find(cam => cam.id === cameraId);
-    console.log('🎬 Playing camera:', camera?.name);
-    console.log('🔗 RTSP URL:', camera?.rtspUrl);
-    setCameras(prev => prev.map(cam => 
-      cam.id === cameraId ? { ...cam, isPlaying: !cam.isPlaying } : cam
-    ));
-  };
-  
-  const handleDeleteCamera = async (cameraId) => {
-    const camera = cameras.find(cam => cam.id === cameraId);
-    Alert.alert(
-      'Delete Camera',
-      `Are you sure you want to delete the camera ${camera?.name}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await CameraTunnelService.removeCamera(cameraId);
-              loadCamerasFromStorage();
-            } catch (error) {
-              console.error('Failed to delete camera:', error);
-            }
-          }
-        }
-      ]
-    );
-  };
-
-  const handleAddCamera = (cameraData) => {
-    const newCamera = {
-      id: Date.now(),
-      name: cameraData.name,
-      location: 'New Location',
-      rtspUrl: cameraData.rtspUrl,
-      isOnline: true
-    };
-    setCameras(prev => [...prev, newCamera]);
-  };
+  const [userName, setUserName] = useState('Name');
 
   return (
     <View style={[styles.container, { backgroundColor: '#212121' }]}>
@@ -344,21 +143,30 @@ const DashboardScreen = ({ navigation, route }) => {
             <View style={styles.alertButtonsContainer}>
               <TouchableOpacity 
                 style={[styles.alertButton, styles.weaponAlertButton]}
-                onPress={() => simulateAlert('aggression')}
+                onPress={() => {
+                  const AlertService = require('../services/AlertService').default;
+                  AlertService.simulateAlert('aggression');
+                }}
               >
                 <Ionicons name="warning" size={12} color="#212121" />
               </TouchableOpacity>
               
               <TouchableOpacity 
                 style={[styles.alertButton, styles.intruderAlertButton]}
-                onPress={() => simulateAlert('weapon')}
+                onPress={() => {
+                  const AlertService = require('../services/AlertService').default;
+                  AlertService.simulateAlert('weapon');
+                }}
               >
                 <Ionicons name="person" size={12} color="#212121" />
               </TouchableOpacity>
               
               <TouchableOpacity 
                 style={[styles.alertButton, styles.motionAlertButton]}
-                onPress={() => simulateAlert('fatigue')}
+                onPress={() => {
+                  const AlertService = require('../services/AlertService').default;
+                  AlertService.simulateAlert('fatigue');
+                }}
               >
                 <Ionicons name="walk" size={12} color="#212121" />
               </TouchableOpacity>
@@ -382,7 +190,7 @@ const DashboardScreen = ({ navigation, route }) => {
         {/* Welcome Section */}
         <View style={styles.welcomeSection}>
           <Text style={styles.greeting}>
-            Welcome, <Text style={styles.nameAccent}>Name</Text>
+            Welcome, <Text style={styles.nameAccent}>{userName}</Text>
           </Text>
           <Text style={styles.subtitle}>Your Security Overview</Text>
         </View>
@@ -442,18 +250,6 @@ const DashboardScreen = ({ navigation, route }) => {
           </View>
         </View>
 
-        {/* Live Stream Button */}
-        <View style={styles.section}>
-          <TouchableOpacity 
-            style={styles.liveStreamButton}
-            onPress={() => navigation.navigate('LiveStream')}
-          >
-            <Ionicons name="videocam" size={24} color="#FFFFFF" />
-            <Text style={styles.liveStreamText}>Live RTSP Stream</Text>
-            <Ionicons name="chevron-forward" size={20} color="#4A9EFF" />
-          </TouchableOpacity>
-        </View>
-
         {/* Login Success Modal */}
         <LoginSuccessModal 
           visible={showLoginSuccess}
@@ -471,222 +267,15 @@ const DashboardScreen = ({ navigation, route }) => {
           alertType={currentAlert?.type || alertType}
         />
 
-        {/* My Cameras Section */}
+        {/* Threat Card */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>My Cameras ({cameras.length})</Text>
-            <View style={styles.sectionRight}>
-              <View style={styles.alertButtonsContainer}>
-                <TouchableOpacity 
-                  style={[styles.alertButton, styles.weaponAlertButton]}
-                  onPress={() => {
-                    setAlertType('aggression');
-                    setShowSecurityAlert(true);
-                    createNotification('aggression');
-                  }}
-                >
-                  <Ionicons name="warning" size={12} color="#212121" />
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[styles.alertButton, styles.intruderAlertButton]}
-                  onPress={() => {
-                    setAlertType('weapon');
-                    setShowSecurityAlert(true);
-                    createNotification('weapon');
-                  }}
-                >
-                  <Ionicons name="person" size={12} color="#212121" />
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[styles.alertButton, styles.motionAlertButton]}
-                  onPress={() => {
-                    setAlertType('fatigue');
-                    setShowSecurityAlert(true);
-                    createNotification('fatigue');
-                  }}
-                >
-                  <Ionicons name="walk" size={12} color="#212121" />
-                </TouchableOpacity>
-              </View>
-              <TouchableOpacity 
-                style={styles.addButton}
-                onPress={() => setShowAddCameraModal(true)}
-              >
-                <Ionicons name="add" size={16} color="#4A9EFF" style={styles.addIcon} />
-                <Text style={styles.addButtonText}>Add</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Camera Grid */}
-          <View style={styles.cameraGrid}>
-            {cameras.length > 0 ? (
-              <>
-                {cameras.map((camera) => (
-                  <View key={camera.id} style={styles.cameraCard}>
-                    <LinearGradient
-                      colors={['#333333', '#2A3A4A']}
-                      style={styles.cameraFullContainer}
-                    >
-                      <View style={styles.cameraHeader}>
-                        <View style={[styles.onlineBadge, !camera.isOnline && styles.offlineBadge]}>
-                          <View style={camera.isOnline ? styles.onlineDot : styles.offlineDot} />
-                          <Text style={camera.isOnline ? styles.onlineText : styles.offlineText}>
-                            {camera.isOnline ? 'Online' : 'Offline'}
-                          </Text>
-                        </View>
-                        <TouchableOpacity 
-                          style={styles.deleteButton}
-                          onPress={() => handleDeleteCamera(camera.id)}
-                        >
-                          <Ionicons name="trash" size={16} color="#FF4444" />
-                        </TouchableOpacity>
-                      </View>
-                      <View style={styles.cameraIconArea}>
-                        {camera.isPlaying ? (
-                          <RTSPPlayer
-                            rtspUrl={camera.rtspUrl}
-                            style={styles.videoPlayer}
-                            onError={() => handlePlayCamera(camera.id)}
-                          />
-                        ) : (
-                          <>
-                            <Ionicons name="videocam" size={48} color="#666666" />
-                            <TouchableOpacity 
-                              style={styles.playOverlay}
-                              onPress={() => handlePlayCamera(camera.id)}
-                            >
-                              <Ionicons name="play" size={16} color="#FFFFFF" />
-                            </TouchableOpacity>
-                          </>
-                        )}
-                      </View>
-                    </LinearGradient>
-                    <View style={styles.cameraInfo}>
-                      <Text style={styles.cameraName}>{camera.name}</Text>
-                      <View style={styles.locationRow}>
-                        <Ionicons name="location" size={14} color="#CCCCCC" />
-                        <Text style={styles.cameraLocation}>{camera.location}</Text>
-                      </View>
-                      <View style={styles.statusRow}>
-                        <Ionicons name="time" size={14} color="#CCCCCC" />
-                        <Text style={styles.cameraStatus}>
-                          {camera.isOnline ? 'Active • Live Stream' : 'Inactive • Offline'}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                ))}
-                
-                {/* Threat Card - appears below cameras */}
-                <ThreatCard 
-                  visible={showThreatCard}
-                  onExpand={handleExpandThreatCard}
-                  onCancel={() => setShowThreatCard(false)}
-                  alertData={currentAlert}
-                  alertType={currentAlert?.type || alertType}
-                />
-                
-                {/* Add Camera Card */}
-                <TouchableOpacity 
-                  style={[styles.cameraCard, styles.addCameraCard]}
-                  onPress={() => setShowAddCameraModal(true)}
-                >
-                  <View style={styles.addCameraIcon}>
-                    <Ionicons name="add" size={48} color="#4A9EFF" />
-                  </View>
-                  <Text style={styles.addCameraText}>Add New Camera</Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <View style={styles.emptyCameraState}>
-                <Ionicons name="videocam-outline" size={64} color="#666666" />
-                <Text style={styles.emptyCameraTitle}>No Cameras Added</Text>
-                <Text style={styles.emptyCameraSubtitle}>Add your first camera to start monitoring</Text>
-                <TouchableOpacity 
-                  style={styles.addFirstCameraButton}
-                  onPress={() => setShowAddCameraModal(true)}
-                >
-                  <Ionicons name="add" size={20} color="#FFFFFF" />
-                  <Text style={styles.addFirstCameraText}>Add First Camera</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </View>
-
-        {/* FRPC Logs Section */}
-        <View style={styles.section}>
-          <TouchableOpacity 
-            style={styles.logsHeader}
-            onPress={() => setShowLogs(!showLogs)}
-          >
-            <Text style={styles.sectionTitle}>FRPC Logs ({frpcLogs.length})</Text>
-            <Ionicons 
-              name={showLogs ? 'chevron-up' : 'chevron-down'} 
-              size={20} 
-              color="#FFFFFF" 
-            />
-          </TouchableOpacity>
-          
-          {showLogs && (
-            <View style={styles.logsContainer}>
-              {frpcLogs.length > 0 ? (
-                <ScrollView 
-                  style={styles.logsList}
-                  nestedScrollEnabled={true}
-                  showsVerticalScrollIndicator={true}
-                >
-                  {frpcLogs.map((log, index) => (
-                    <View key={index} style={styles.logItem}>
-                      <Text style={styles.logTimestamp}>{log.timestamp}</Text>
-                      <Text style={styles.logMessage}>{log.message}</Text>
-                    </View>
-                  ))}
-                </ScrollView>
-              ) : (
-                <View style={styles.noLogsContainer}>
-                  <Text style={styles.noLogsText}>No FRPC logs yet</Text>
-                  <Text style={styles.noLogsSubtext}>Logs will appear when tunnel is active</Text>
-                </View>
-              )}
-            </View>
-          )}
-          
-          {/* Alert Buttons */}
-          <View style={styles.logsAlertButtons}>
-            <TouchableOpacity 
-              style={[styles.alertButton, styles.weaponAlertButton]}
-              onPress={() => {
-                setAlertType('aggression');
-                setShowSecurityAlert(true);
-              }}
-            >
-              <Ionicons name="warning" size={12} color="#212121" />
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.alertButton, styles.intruderAlertButton]}
-              onPress={() => {
-                setAlertType('weapon');
-                setShowSecurityAlert(true);
-              }}
-            >
-              <Ionicons name="person" size={12} color="#212121" />
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.alertButton, styles.motionAlertButton]}
-              onPress={() => {
-                setAlertType('fatigue');
-                setShowSecurityAlert(true);
-              }}
-            >
-              <Ionicons name="walk" size={12} color="#212121" />
-            </TouchableOpacity>
-          </View>
+          <ThreatCard
+            visible={showThreatCard}
+            onExpand={handleExpandThreatCard}
+            onCancel={() => setShowThreatCard(false)}
+            alertData={currentAlert}
+            alertType={currentAlert?.type || alertType}
+          />
         </View>
 
         <View style={styles.bottomPadding} />
@@ -703,13 +292,13 @@ const DashboardScreen = ({ navigation, route }) => {
         >
           <Ionicons name="bar-chart" size={20} color="#8B92A7" />
         </TouchableOpacity>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.navItem}
-          onPress={() => setShowAddCameraModal(true)}
+          onPress={() => navigation.navigate('Cameras')}
         >
-          <Ionicons name="add" size={24} color="#8B92A7" />
+          <Ionicons name="videocam" size={20} color="#8B92A7" />
         </TouchableOpacity>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.navItem}
           onPress={() => navigation.navigate('DeviceHealth')}
         >
@@ -720,13 +309,7 @@ const DashboardScreen = ({ navigation, route }) => {
         </TouchableOpacity>
       </View>
 
-      <AddCameraModal 
-        visible={showAddCameraModal}
-        onClose={() => setShowAddCameraModal(false)}
-        onComplete={handleAddCamera}
-      />
-
-      <CameraSetupModal 
+      <CameraSetupModal
         visible={showCameraSetup}
         onClose={() => setShowCameraSetup(false)}
       />
@@ -892,191 +475,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#000000',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#FFFFFF',
-  },
-  addIcon: {
-    marginRight: 4,
-  },
-  addButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  cameraGrid: {
-    gap: 16,
-  },
-  cameraCard: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 0.2,
-    borderColor: '#555555',
-  },
-  cameraFullContainer: {
-    height: 240,
-  },
-  cameraHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 12,
-  },
-  cameraIconArea: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    position: 'relative',
-  },
-  playOverlay: {
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
-    backgroundColor: '#666666',
-    borderRadius: 20,
-    padding: 8,
-  },
-  cameraInfo: {
-    backgroundColor: '#333333',
-    padding: 16,
-  },
-  onlineBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,255,0,0.2)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  offlineBadge: {
-    backgroundColor: 'rgba(255,0,0,0.2)',
-  },
-  onlineDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#00FF00',
-    marginRight: 4,
-  },
-  offlineDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#FF0000',
-    marginRight: 4,
-  },
-  onlineText: {
-    color: '#00FF00',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  offlineText: {
-    color: '#FF0000',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  cameraName: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'left',
-    marginBottom: 4,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  cameraLocation: {
-    color: '#CCCCCC',
-    fontSize: 14,
-    marginLeft: 4,
-  },
-  cameraStatus: {
-    color: '#CCCCCC',
-    fontSize: 12,
-    marginLeft: 4,
-  },
-  addCameraCard: {
-    backgroundColor: 'rgba(74,158,255,0.1)',
-    borderColor: '#4A9EFF',
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 280,
-  },
-  addCameraIcon: {
-    marginBottom: 12,
-  },
-  addCameraText: {
-    color: '#4A9EFF',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  emptyCameraState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-    paddingHorizontal: 20,
-  },
-  emptyCameraTitle: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyCameraSubtitle: {
-    color: '#8B92A7',
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  addFirstCameraButton: {
-    backgroundColor: '#4A9EFF',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    gap: 8,
-  },
-  addFirstCameraText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  deleteButton: {
-    backgroundColor: 'rgba(255, 68, 68, 0.2)',
-    borderRadius: 16,
-    padding: 6,
-  },
   bottomNav: {
     position: 'absolute',
     bottom: 0,
@@ -1154,87 +552,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,69,0,0.9)',
     paddingHorizontal: 8,
   },
-  videoPlayer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#000000',
-  },
-
-  liveStreamButton: {
-    backgroundColor: 'rgba(64,64,64,0.7)',
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 0.5,
-    borderColor: '#555555',
-  },
-  liveStreamText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '600',
-    flex: 1,
-    marginLeft: 12,
-  },
-  
-  // FRPC Logs Styles
-  logsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: 'rgba(64,64,64,0.7)',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 0.5,
-    borderColor: '#555555',
-  },
-  logsContainer: {
-    backgroundColor: 'rgba(32,32,32,0.9)',
-    borderRadius: 8,
-    marginTop: 8,
-    maxHeight: 200,
-  },
-  logsList: {
-    maxHeight: 180,
-    padding: 12,
-  },
-  logItem: {
-    flexDirection: 'row',
-    marginBottom: 8,
-    paddingBottom: 8,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#333',
-  },
-  logTimestamp: {
-    color: '#4A9EFF',
-    fontSize: 12,
-    fontFamily: 'monospace',
-    width: 80,
-    marginRight: 8,
-  },
-  logMessage: {
-    color: '#CCCCCC',
-    fontSize: 12,
-    fontFamily: 'monospace',
-    flex: 1,
-  },
-  noLogsContainer: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  noLogsText: {
-    color: '#666',
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  noLogsSubtext: {
-    color: '#555',
-    fontSize: 12,
-  },
   alertButtonsContainer: {
     flexDirection: 'row',
     gap: 4,
@@ -1254,13 +571,6 @@ const styles = StyleSheet.create({
   },
   motionAlertButton: {
     backgroundColor: '#212121',
-  },
-  logsAlertButtons: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 16,
   },
 });
 

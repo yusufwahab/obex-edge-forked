@@ -4,16 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RecentAlertsList from '../components/RecentAlertsList';
-import AddCameraModal from '../components/AddCameraModal';
 
 const AnalyticsScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [activeFilter, setActiveFilter] = useState('7 Days');
-  const [showAddCameraModal, setShowAddCameraModal] = useState(false);
-
-  const handleAddCamera = (cameraData) => {
-    console.log('New camera added:', cameraData);
-  };
 
   const ActivityTimelineChart = () => {
     const yAxisLabels = [24, 20, 16, 12, 8, 4, 0];
@@ -150,13 +144,7 @@ const AnalyticsScreen = ({ navigation }) => {
         <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
           <Ionicons name="bar-chart" size={20} color="#000000" />
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.navItem}
-          onPress={() => setShowAddCameraModal(true)}
-        >
-          <Ionicons name="add" size={24} color="#8B92A7" />
-        </TouchableOpacity>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.navItem}
           onPress={() => navigation.navigate('DeviceHealth')}
         >
@@ -166,12 +154,6 @@ const AnalyticsScreen = ({ navigation }) => {
           <Ionicons name="settings" size={20} color="#8B92A7" />
         </TouchableOpacity>
       </View>
-
-      <AddCameraModal 
-        visible={showAddCameraModal}
-        onClose={() => setShowAddCameraModal(false)}
-        onComplete={handleAddCamera}
-      />
     </View>
   );
 };
